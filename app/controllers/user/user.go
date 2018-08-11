@@ -13,6 +13,187 @@ import (
 	"time"
 )
 
+func SendConfirmationEmail(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Get user email confirmations (if he has any)
+	userEmailConfirmation, found, err := userData.GetEmailConfirmation()
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Your user doesn't have a pending email chang"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Create email confirmation code
+	recoveryCode := time.Now().Unix()
+	stringCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-5:]
+
+	//Send email verification code
+	//emailSubject := "Confirmación de email"
+	//emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: https://virtual-box-web-app-develop.herokuapp.com/confirmar?code=" + stringCode + "&email=" + userEmailConfirmation.Email + " .Tu código de confirmación es: " + stringCode
+	//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+	//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+	//	return
+	//}
+
+	//Modify email confirmation
+	userEmailConfirmation.Code = stringCode
+	if err := userEmailConfirmation.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Email sent"})
+
+}
+
+func VerifyEmail(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+	emailCode := c.PostForm("code")
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusNotFound, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Check email code
+	if emailCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Email confirmation code not sent"})
+		return
+	}
+
+	//Get user email confirmations (if he has any)
+	userEmailConfirmation, found, err := userData.GetEmailConfirmation()
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "You don't have a pending email change"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Check confirmation code matches
+	if userEmailConfirmation.Code != emailCode {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid change code"})
+		return
+	}
+
+	//Delete email confirmations of the user
+	if err := userEmailConfirmation.Delete(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
+		return
+	}
+
+	//Modify user
+	userData.Email = userEmailConfirmation.Email
+	if err := userData.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Email changed successfully"})
+
+}
+
+func ModifyEmail(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+	email := c.PostForm("email")
+
+	//Validate Email
+	if err := validateLiteralEmail(email); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error(), "detail": err.Error()})
+		return
+	}
+
+	//Check email is not being used
+	isBeingUsed, err := models.CheckEmailExistence(email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+	if isBeingUsed == true {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Email already in use"})
+		return
+	}
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//If email changes, register the change and send confirmation email
+	if userData.Email != email {
+
+		//Delete previous email confirmations
+		if err := userData.DeleteEmailConfirmations(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
+			return
+		}
+
+		//Create email confirmation
+		recoveryCode := time.Now().Unix()
+		stringCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-5:]
+
+		newEmailConfirmation := models.EmailConfirmation{
+			UserID: userData.ID,
+			Code:   stringCode,
+			Email:  email,
+		}
+
+		if err = newEmailConfirmation.Save(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+			return
+		}
+
+		//Send email verification code
+		//emailSubject := "Confirmación de email"
+		//emailMessage := "Tu código de confirmación es: " + stringCode
+		//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+		//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+		//	return
+		//}
+
+	} else {
+
+		c.JSON(http.StatusBadRequest, gin.H{"description": "You have submitted the same email that you have"})
+		return
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Email confirmation mail sent"})
+
+}
+
 func Signup(c *gin.Context) {
 
 	emailValue := c.PostForm("email")
@@ -398,7 +579,7 @@ func AddProfilePicture(c *gin.Context) {
 	userID := c.MustGet("id").(uint)
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -407,27 +588,27 @@ func AddProfilePicture(c *gin.Context) {
 	//Get user data
 	userData, found, err := models.GetUserById(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{ "description": "User not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
 		return
 	}
 
 	//Check if user has a profile picture. If so, delete old picture
 	if userData.ProfilePicture.ID != 0 {
 		if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 			return
 		}
 	}
 
 	tasks := []*amazonS3.UploadImageTask{
 		{
-			FileHeader:photoFile,
-			UserID:userID,
-			Function:uploadAndSaveProfilePicture,
+			FileHeader: photoFile,
+			UserID:     userID,
+			Function:   uploadAndSaveProfilePicture,
 		},
 	}
 
@@ -442,12 +623,11 @@ func AddProfilePicture(c *gin.Context) {
 		}
 	}
 
-	if numErrors > 0{
+	if numErrors > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Unexpected error when saving the profile picture"})
-	}else{
-		c.JSON(http.StatusOK, gin.H{ "description": "Profile picture added"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"description": "Profile picture added"})
 	}
-
 
 }
 
@@ -458,26 +638,26 @@ func DeleteProfilePicture(c *gin.Context) {
 	//Get user data
 	userData, found, err := models.GetUserById(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{ "description": "User not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
 		return
 	}
 
 	//Check if user has a profile picture
 	if userData.ProfilePicture.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{ "description": "You don't have a profile picture"})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "You don't have a profile picture"})
 		return
 	}
 
 	if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{ "description": "Profile picture deleted"})
+	c.JSON(http.StatusOK, gin.H{"description": "Profile picture deleted"})
 
 }
 

@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"theAmazingCodeExample/app/config"
+	"theAmazingCodeExample/app/controllers/address"
 	"theAmazingCodeExample/app/controllers/role"
 	"theAmazingCodeExample/app/controllers/user"
-	"theAmazingCodeExample/app/controllers/address"
 	"theAmazingCodeExample/app/middleware"
 	"theAmazingCodeExample/app/migrations"
 	"theAmazingCodeExample/app/security"
@@ -78,9 +78,9 @@ func CreateRouter() {
 		//userProfile.GET("/resendVerificationSMS", user.SendVerificationSMS)
 
 		//Email change and verification
-		//userProfile.PUT("/profile/email", user.ModifyEmail)
-		//userProfile.PUT("/verifyEmail", user.VerifyEmail)
-		//userProfile.GET("/resendConfirmationEmail", user.SendConfirmationEmail)
+		userProfile.PUT("/profile/email", user.ModifyEmail)
+		userProfile.PUT("/verifyEmail", user.VerifyEmail)
+		userProfile.GET("/resendConfirmationEmail", user.SendConfirmationEmail)
 
 	}
 

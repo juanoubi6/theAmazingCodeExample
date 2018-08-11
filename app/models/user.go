@@ -25,12 +25,14 @@ type User struct {
 
 type EmailConfirmation struct {
 	ID     uint `gorm:"primary_key" json:"-"`
+	Email	string
 	UserID uint
 	Code   string
 }
 
 type PhoneConfirmation struct {
 	ID     uint `gorm:"primary_key" json:"-"`
+	Phone string
 	UserID uint
 	Code   string
 }
@@ -97,9 +99,57 @@ func (userData *User) GetMainAddress() (Address, bool, error) {
 
 }
 
+func (userData *User) DeleteEmailConfirmations ()error{
+
+	err := common.GetDatabase().Where("user_id = ?", userData.ID).Delete(EmailConfirmation{}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (userData *User) GetEmailConfirmation() (EmailConfirmation, bool,error) {
+
+	var emailConfirmation EmailConfirmation
+
+	r := common.GetDatabase()
+
+	r = r.Where("user_id = ?", userData.ID).First(&emailConfirmation)
+	if r.RecordNotFound() {
+		return emailConfirmation, false, nil
+	}
+	if r.Error != nil {
+		return emailConfirmation, true, r.Error
+	}
+
+	return emailConfirmation, true, nil
+}
+
 func (emailConfirmationData *EmailConfirmation) Save() error {
 
 	err := common.GetDatabase().Create(emailConfirmationData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (emailConfirmationData *EmailConfirmation) Delete() error {
+
+	err := common.GetDatabase().Delete(emailConfirmationData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (emailConfirmationData *EmailConfirmation) Modify() error {
+
+	err := common.GetDatabase().Save(emailConfirmationData).Error
 	if err != nil {
 		return err
 	}
@@ -200,26 +250,6 @@ func GetUserPermissions(userID uint) ([]string, error) {
 
 	return permissionList, nil
 
-}
-
-func CreateEmailConfirmation(newEmailConfirmation EmailConfirmation) (EmailConfirmation, error) {
-
-	err := common.GetDatabase().Create(&newEmailConfirmation).Error
-	if err != nil {
-		return newEmailConfirmation, err
-	}
-
-	return newEmailConfirmation, nil
-}
-
-func CreateProfilePicture(newProfilePicture ProfilePicture) (ProfilePicture, error) {
-
-	err := common.GetDatabase().Create(&newProfilePicture).Error
-	if err != nil {
-		return newProfilePicture, err
-	}
-
-	return newProfilePicture, nil
 }
 
 func GetUsers(limit int, offset int, idParam string, phoneParam string, emailParam string, nameParam string, lastNameParam string, roleIdsParam []string, columnToOrder string, order string) ([]User, int, error) {

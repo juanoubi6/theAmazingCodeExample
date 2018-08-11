@@ -5,18 +5,18 @@ import (
 	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"hash/adler32"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"sync"
 	"theAmazingCodeExample/app/common"
 	"theAmazingCodeExample/app/config"
-	"time"
-	"sync"
 	"theAmazingCodeExample/app/models"
+	"time"
 )
 
 func DeletePictureFromS3(photoData models.ProfilePicture) error {
@@ -132,8 +132,8 @@ func uploadPicture(awsSession *session.Session, header *multipart.FileHeader) (s
 
 		return *key, uploaded.Location, nil
 
-	}else{
-		return "falseS3key","falseURL",nil
+	} else {
+		return "falseS3key", "falseURL", nil
 	}
 
 }

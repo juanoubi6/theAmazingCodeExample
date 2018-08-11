@@ -3,19 +3,19 @@ package models
 import "theAmazingCodeExample/app/common"
 
 type Address struct {
-	ID           uint   `gorm:"primary_key"`
-	Address      string `gorm:"not null"`
-	Floor        string `gorm:"null"`
-	Apartment    string `gorm:"null"`
-	MainAddress  bool   `gorm:"not null"`
-	PostalCodeID uint   `gorm:"not null" json:"-"`
-	Latitude	 float64	`gorm:"type:float(10,6);"`
-	Longitude	 float64	`gorm:"type:float(10,6);"`
+	ID           uint    `gorm:"primary_key"`
+	Address      string  `gorm:"not null"`
+	Floor        string  `gorm:"null"`
+	Apartment    string  `gorm:"null"`
+	MainAddress  bool    `gorm:"not null"`
+	PostalCodeID uint    `gorm:"not null" json:"-"`
+	Latitude     float64 `gorm:"type:float(10,6);"`
+	Longitude    float64 `gorm:"type:float(10,6);"`
 	PostalCode   PostalCode
 	UserID       uint `gorm:"not null" json:"-"`
 }
 
-func (addressData *Address) Save() (error) {
+func (addressData *Address) Save() error {
 
 	err := common.GetDatabase().Create(addressData).Error
 	if err != nil {
@@ -66,15 +66,15 @@ func GetAddressById(id uint) (Address, bool, error) {
 	return addressData, true, nil
 }
 
-func GetAddressesForUser(userID uint)([]Address,error){
+func GetAddressesForUser(userID uint) ([]Address, error) {
 
 	var addresses []Address
 
-	db := common.GetDatabase().Where("user_id = ?",userID).Preload("PostalCode").Find(&addresses)
-	if db.Error != nil{
-		return addresses,db.Error
+	db := common.GetDatabase().Where("user_id = ?", userID).Preload("PostalCode").Find(&addresses)
+	if db.Error != nil {
+		return addresses, db.Error
 	}
 
-	return addresses,nil
+	return addresses, nil
 
 }

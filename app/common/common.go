@@ -46,5 +46,3 @@ func CreateAWSSession() {
 func GetAWSSession() *session.Session {
 	return awsSession
 }
-
-
