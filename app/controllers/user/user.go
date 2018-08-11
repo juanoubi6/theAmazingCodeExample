@@ -398,39 +398,56 @@ func AddProfilePicture(c *gin.Context) {
 	userID := c.MustGet("id").(uint)
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
 	photoFile := form.File["profile_picture"][0]
-	photoFile1 := form.File["profile_picture"][0]
-	photoFile2 := form.File["profile_picture"][0]
-	photoFile3 := form.File["profile_picture"][0]
-	photoFile4 := form.File["profile_picture"][0]
-	photoFile5 := form.File["profile_picture"][0]
-	photoFile6 := form.File["profile_picture"][0]
-	photoFile7 := form.File["profile_picture"][0]
 
-	tasks := []*common.Task{
-		common.UploadImageTask{Function: uploadAndSaveProfilePicture(photoFile, userID)},
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{ "description": "User not found"})
+		return
 	}
 
-	p := pool.NewPool(tasks, conf.Concurrency)
+	//Check if user has a profile picture. If so, delete old picture
+	if userData.ProfilePicture.ID != 0 {
+		if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
+			return
+		}
+	}
+
+	tasks := []*amazonS3.UploadImageTask{
+		{
+			FileHeader:photoFile,
+			UserID:userID,
+			Function:uploadAndSaveProfilePicture,
+		},
+	}
+
+	p := amazonS3.NewPool(tasks, 3)
 	p.Run()
 
-	var numErrors int
+	var numErrors = 0
 	for _, task := range p.Tasks {
 		if task.Err != nil {
-			log.Error(task.Err)
+			println(task.Err.Error())
 			numErrors++
-		}
-		if numErrors >= 10 {
-			log.Error("Too many errors.")
-			break
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "true", "description": "Profile picture added"})
+	if numErrors > 0{
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Unexpected error when saving the profile picture"})
+	}else{
+		c.JSON(http.StatusOK, gin.H{ "description": "Profile picture added"})
+	}
+
 
 }
 
@@ -441,26 +458,26 @@ func DeleteProfilePicture(c *gin.Context) {
 	//Get user data
 	userData, found, err := models.GetUserById(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{"success": "false", "description": "User not found"})
+		c.JSON(http.StatusBadRequest, gin.H{ "description": "User not found"})
 		return
 	}
 
 	//Check if user has a profile picture
 	if userData.ProfilePicture.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"success": "false", "description": "You don't have a profile picture"})
+		c.JSON(http.StatusBadRequest, gin.H{ "description": "You don't have a profile picture"})
 		return
 	}
 
-	if err := DeleteUserProfilePicture(userData.ProfilePicture); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+	if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{ "description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "true", "description": "Profile picture deleted"})
+	c.JSON(http.StatusOK, gin.H{ "description": "Profile picture deleted"})
 
 }
 

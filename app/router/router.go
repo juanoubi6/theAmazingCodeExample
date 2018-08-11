@@ -60,8 +60,8 @@ func CreateRouter() {
 		//User profile endpoints
 		userProfile.PUT("/profile", user.ModifyUserName)
 		userProfile.GET("/profile", user.GetUserProfile)
-		//userProfile.POST("/profile/picture", user.AddProfilePicture)
-		//userProfile.DELETE("/profile/picture", user.DeleteProfilePicture)
+		userProfile.POST("/profile/picture", user.AddProfilePicture)
+		userProfile.DELETE("/profile/picture", user.DeleteProfilePicture)
 		userProfile.PUT("/password", user.ChangePassword)
 
 		//Address endpoints

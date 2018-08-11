@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"hash/adler32"
 	"io"
 	"mime/multipart"
@@ -14,7 +15,41 @@ import (
 	"theAmazingCodeExample/app/common"
 	"theAmazingCodeExample/app/config"
 	"time"
+	"sync"
+	"theAmazingCodeExample/app/models"
 )
+
+func DeletePictureFromS3(photoData models.ProfilePicture) error {
+
+	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
+
+		svc := s3.New(common.GetAWSSession())
+
+		_, err := svc.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(config.GetConfig().AWS_BUCKET),
+			Key:    aws.String(photoData.S3Key),
+		})
+		if err != nil {
+			return err
+		}
+
+		err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+			Bucket: aws.String(config.GetConfig().AWS_BUCKET),
+			Key:    aws.String(photoData.S3Key),
+		})
+		if err != nil {
+			return err
+		}
+
+	}
+
+	err := common.GetDatabase().Delete(&photoData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func UploadImageToS3(header *multipart.FileHeader) (string, string, error) {
 
@@ -64,36 +99,42 @@ func getContentType(file multipart.File) (string, error) {
 
 func uploadPicture(awsSession *session.Session, header *multipart.FileHeader) (string, string, error) {
 
-	file, err := header.Open()
-	if err != nil {
-		return "", "", err
-	}
-	defer file.Close()
+	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
 
-	ctype, err := getContentType(file)
-	if err != nil {
-		return "", "", err
-	}
+		file, err := header.Open()
+		if err != nil {
+			return "", "", err
+		}
+		defer file.Close()
 
-	buf := bytes.NewBuffer(nil)
-	_, err = io.Copy(buf, file)
-	if err != nil {
-		return "", "", err
-	}
+		ctype, err := getContentType(file)
+		if err != nil {
+			return "", "", err
+		}
 
-	uploader := s3manager.NewUploader(awsSession)
-	key := aws.String(getS3FileKey(buf.Bytes()) + "." + ctype[6:])
-	uploaded, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(config.GetConfig().AWS_BUCKET),
-		Key:         key,
-		Body:        file,
-		ContentType: aws.String(ctype),
-	})
-	if err != nil {
-		return "", "", err
-	}
+		buf := bytes.NewBuffer(nil)
+		_, err = io.Copy(buf, file)
+		if err != nil {
+			return "", "", err
+		}
 
-	return *key, uploaded.Location, nil
+		uploader := s3manager.NewUploader(awsSession)
+		key := aws.String(getS3FileKey(buf.Bytes()) + "." + ctype[6:])
+		uploaded, err := uploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(config.GetConfig().AWS_BUCKET),
+			Key:         key,
+			Body:        file,
+			ContentType: aws.String(ctype),
+		})
+		if err != nil {
+			return "", "", err
+		}
+
+		return *key, uploaded.Location, nil
+
+	}else{
+		return "falseS3key","falseURL",nil
+	}
 
 }
 
@@ -101,4 +142,53 @@ func getS3FileKey(file []byte) string {
 	date := []byte(time.Now().String())
 	cs := adler32.Checksum(append(file, date...))
 	return strconv.Itoa(int(cs))
+}
+
+///////////////////Worker pool implementation///////////////////
+type UploadImageTask struct {
+	FileHeader *multipart.FileHeader
+	UserID     uint
+	Err        error
+	Function   func(*multipart.FileHeader, uint) error
+}
+
+type Pool struct {
+	Tasks        []*UploadImageTask
+	Concurrency  int
+	TasksChannel chan *UploadImageTask
+	Wg           sync.WaitGroup
+}
+
+func NewPool(tasks []*UploadImageTask, concurrency int) *Pool {
+	return &Pool{
+		Tasks:        tasks,
+		Concurrency:  concurrency,
+		TasksChannel: make(chan *UploadImageTask),
+	}
+}
+
+func (p *Pool) Run() {
+	for i := 0; i < p.Concurrency; i++ {
+		go p.work()
+	}
+
+	p.Wg.Add(len(p.Tasks))
+	for _, task := range p.Tasks {
+		p.TasksChannel <- task
+	}
+
+	close(p.TasksChannel)
+
+	p.Wg.Wait()
+}
+
+func (p *Pool) work() {
+	for task := range p.TasksChannel {
+		task.run(&p.Wg)
+	}
+}
+
+func (t *UploadImageTask) run(wg *sync.WaitGroup) {
+	t.Err = t.Function(t.FileHeader, t.UserID)
+	wg.Done()
 }
