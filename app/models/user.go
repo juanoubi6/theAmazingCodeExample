@@ -59,33 +59,7 @@ func (userData *User) Modify() error {
 
 	r := common.GetDatabase()
 
-	err := r.Unscoped().Save(&userData).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func (userData *User) Enable() error {
-
-	userData.Enabled = true
-
-	err := common.GetDatabase().Save(userData).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func (userData *User) Disable() error {
-
-	userData.Enabled = false
-
-	err := common.GetDatabase().Save(userData).Error
+	err := r.Save(&userData).Error
 	if err != nil {
 		return err
 	}

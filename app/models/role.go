@@ -2,6 +2,7 @@ package models
 
 import (
 	"theAmazingCodeExample/app/common"
+	"errors"
 )
 
 type Role struct {
@@ -19,7 +20,7 @@ func GetRoleById(id uint) (Role, bool, error) {
 
 	var role Role
 
-	r := common.GetDatabase().Where("id = ?", id).First(&role)
+	r := common.GetDatabase().Where("id = ?", id).Preload("Permissions").First(&role)
 	if r.RecordNotFound() {
 		return role, false, nil
 	}
@@ -37,7 +38,7 @@ func GetRoles(limit int, offset int) ([]Role, int, error) {
 	var quantity int
 
 	//Get roles
-	r := common.GetDatabase().Limit(limit).Offset(offset).Find(&roles)
+	r := common.GetDatabase().Limit(limit).Offset(offset).Preload("Permissions").Find(&roles)
 	if r.Error != nil {
 		return roles, 0, r.Error
 	}
@@ -49,5 +50,26 @@ func GetRoles(limit int, offset int) ([]Role, int, error) {
 	}
 
 	return roles, quantity, nil
+
+}
+
+func (roleData *Role) ReplacePermissions(permissions []string) error{
+
+	var permissionsList []Permission
+
+	r := common.GetDatabase().Where("id in (?)", permissions).Find(&permissionsList)
+	if r.Error != nil{
+		return r.Error
+	}
+
+	if len(permissions) != len(permissionsList){
+		return errors.New("Some of the permissions you submitted are invalid")
+	}
+
+	if err := common.GetDatabase().Model(roleData).Association("Permissions").Replace(permissionsList).Error; err != nil{
+		return err
+	}
+
+	return nil
 
 }

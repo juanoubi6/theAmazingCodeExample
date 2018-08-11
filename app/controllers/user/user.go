@@ -246,7 +246,7 @@ func ModifyUser(c *gin.Context) {
 			return
 		}
 
-		userData.RoleID = roleData.ID
+		userData.Role = roleData
 	}
 
 	//Modify user
@@ -259,34 +259,10 @@ func ModifyUser(c *gin.Context) {
 
 }
 
-func DisableUser(c *gin.Context) {
-
-	userGUID := c.Param("id")
-
-	//Get user by GUID
-	userData, found, err := models.GetUserByGuid(userGUID)
-	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when trying to obtain the user", "detail": err.Error()})
-		return
-	}
-
-	//Disable user
-	if err := userData.Disable(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when disabling user", "detail": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"description": "User disabled"})
-
-}
-
 func EnableUser(c *gin.Context) {
 
 	userGUID := c.Param("id")
+	enable := c.PostForm("enabled")
 
 	//Get user by GUID
 	userData, found, err := models.GetUserByGuid(userGUID)
@@ -299,12 +275,23 @@ func EnableUser(c *gin.Context) {
 		return
 	}
 
-	//Enable user
-	if err := userData.Enable(); err != nil {
+	enabledValue,err := strconv.Atoi(enable)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		return
+	}
+
+	if enabledValue == 1{
+		userData.Enabled = true
+	}else{
+		userData.Enabled = false
+	}
+
+	if err := userData.Modify(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when enabling the user", "detail": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"description": "User enabled"})
+	c.JSON(http.StatusOK, gin.H{"description": userData})
 
 }

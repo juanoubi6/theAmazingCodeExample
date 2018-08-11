@@ -40,6 +40,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	if u.Enabled == false{
+		c.JSON(http.StatusForbidden, gin.H{"description": "Your user was disabled by an administrator", "detail": ""})
+		return
+	}
+
 	token, err := CreateToken(u.ID, u.Name, u.LastName, u.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happenedo", "detail": err.Error()})

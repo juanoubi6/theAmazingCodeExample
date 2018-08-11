@@ -46,13 +46,13 @@ func CreateRouter() {
 	{
 		userManagment.GET("", middleware.Paginate(), middleware.Sort(), user.GetUsers)
 		userManagment.PUT("/:id", user.ModifyUser)
-		userManagment.DELETE("/:id/disable", user.DisableUser)
 		userManagment.PUT("/:id/enable", user.EnableUser)
 	}
 
 	rolesManagment := router.Group("/roles",middleware.IsAdmin(), middleware.ValidateTokenAndPermission("Role Management"))
 	{
 		rolesManagment.GET("", middleware.Paginate(), role.GetRoles)
+		rolesManagment.PUT("/:id/permissions", role.ModifyPermissions)
 	}
 
 }
