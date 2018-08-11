@@ -39,7 +39,7 @@ func CreateRouter() {
 		loginRoutes.POST("/login", security.Login)
 		loginRoutes.POST("/signup", user.Signup)
 		loginRoutes.POST("/recoverPassword", user.SendRecoveryMail)
-		loginRoutes.POST("/changePassword", user.ChangePasswordFromRecoveryCode)
+		loginRoutes.PUT("/password", user.ChangePasswordFromRecoveryCode)
 	}
 
 	userManagment := router.Group("/users", middleware.IsAdmin(), middleware.ValidateTokenAndPermission("User Management"))
@@ -49,10 +49,38 @@ func CreateRouter() {
 		userManagment.PUT("/:id/enable", user.EnableUser)
 	}
 
-	rolesManagment := router.Group("/roles",middleware.IsAdmin(), middleware.ValidateTokenAndPermission("Role Management"))
+	rolesManagment := router.Group("/roles", middleware.IsAdmin(), middleware.ValidateTokenAndPermission("Role Management"))
 	{
 		rolesManagment.GET("", middleware.Paginate(), role.GetRoles)
 		rolesManagment.PUT("/:id/permissions", role.ModifyPermissions)
+	}
+
+	userProfile := router.Group("/user", middleware.ValidateTokenAndPermission("Profile"))
+	{
+		//User profile endpoints
+		userProfile.PUT("/profile", user.ModifyUserName)
+		userProfile.GET("/profile", user.GetUserProfile)
+		//userProfile.POST("/profile/picture", user.AddProfilePicture)
+		//userProfile.DELETE("/profile/picture", user.DeleteProfilePicture)
+		userProfile.PUT("/password", user.ChangePassword)
+
+		//Address endpoints
+		//userProfile.GET("/address", address.GetAddresses)
+		//userProfile.POST("/address", address.AddAddress)
+		//userProfile.PUT("/address/:id", address.ModifyAddress)
+		//userProfile.PUT("/address/:id/main", address.MarkAsMain)
+		//userProfile.DELETE("/address/:id", address.DeleteAddress)
+
+		//Phone endpoints
+		//userProfile.POST("/phone/verificationSMS", user.ModifyPhone)
+		//userProfile.POST("/phone", user.ConfirmPhoneCode)
+		//userProfile.GET("/resendVerificationSMS", user.SendVerificationSMS)
+
+		//Email change and verification
+		//userProfile.PUT("/profile/email", user.ModifyEmail)
+		//userProfile.PUT("/verifyEmail", user.VerifyEmail)
+		//userProfile.GET("/resendConfirmationEmail", user.SendConfirmationEmail)
+
 	}
 
 }

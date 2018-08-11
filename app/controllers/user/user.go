@@ -2,10 +2,12 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
 	"theAmazingCodeExample/app/common"
+	"theAmazingCodeExample/app/helpers/amazonS3"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
@@ -53,7 +55,7 @@ func Signup(c *gin.Context) {
 	}
 
 	if err := newEmailConfirmation.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -68,13 +70,13 @@ func Signup(c *gin.Context) {
 	//Login information
 	token, err := security.CreateToken(newUser.ID, newUser.Name, newUser.LastName, newUser.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err})
 		return
 	}
 
 	permissionList, err := models.GetUserPermissions(newUser.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err})
 		return
 	}
 
@@ -97,7 +99,7 @@ func SendRecoveryMail(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -107,7 +109,7 @@ func SendRecoveryMail(c *gin.Context) {
 	//Modify user recovery code
 	userData.PasswordRecoveryCode = stringCode
 	if err := userData.Modify(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -151,7 +153,7 @@ func ChangePasswordFromRecoveryCode(c *gin.Context) {
 	userData.PasswordRecoveryCode = ""
 
 	if err := userData.Modify(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -180,7 +182,7 @@ func GetUsers(c *gin.Context) {
 
 	userList, quantity, err := models.GetUsers(limit, offset, idParam, phoneParam, emailParam, nameParam, lastNameParam, roleList, column, order)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "Something unexpected happened when obtaining users", "detail": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Something went wrong when obtaining users", "detail": err.Error()})
 		return
 	}
 
@@ -202,7 +204,7 @@ func ModifyUser(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when trying to obtaing the user", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong when trying to obtaing the user", "detail": err.Error()})
 		return
 	}
 
@@ -242,7 +244,7 @@ func ModifyUser(c *gin.Context) {
 			return
 		}
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened al obtener el rol", "detail": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong al obtener el rol", "detail": err.Error()})
 			return
 		}
 
@@ -251,7 +253,7 @@ func ModifyUser(c *gin.Context) {
 
 	//Modify user
 	if err := userData.Modify(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when trying to modify the user", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong when trying to modify the user", "detail": err.Error()})
 		return
 	}
 
@@ -271,27 +273,214 @@ func EnableUser(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when trying to obtain the user", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong when trying to obtain the user", "detail": err.Error()})
 		return
 	}
 
-	enabledValue,err := strconv.Atoi(enable)
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+	enabledValue, err := strconv.Atoi(enable)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
-	if enabledValue == 1{
+	if enabledValue == 1 {
 		userData.Enabled = true
-	}else{
+	} else {
 		userData.Enabled = false
 	}
 
 	if err := userData.Modify(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened when enabling the user", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong when enabling the user", "detail": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"description": userData})
+
+}
+
+func ChangePassword(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	oldPassword := c.PostForm("old_password")
+	newPassword := c.PostForm("new_password")
+
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Check old password matches the actual password
+	if match := security.CheckPasswordHash(oldPassword, userData.Password); !match {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid password"})
+		return
+	}
+
+	//Validate new password is valid
+	if err := validatePassword(newPassword); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error(), "detail": err.Error()})
+		return
+	}
+
+	newHash, _ := security.HashPassword(newPassword)
+
+	userData.Password = newHash
+
+	if err := userData.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Password changed successfully"})
+
+}
+
+func ModifyUserName(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	firstName := c.PostForm("name")
+	lastName := c.PostForm("last_name")
+
+	if firstName == "" || lastName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Name or last name were not submitted"})
+		return
+	}
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	userData.Name = firstName
+	userData.LastName = lastName
+
+	if err := userData.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": userData})
+
+}
+
+func GetUserProfile(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": userData})
+
+}
+
+func AddProfilePicture(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+		return
+	}
+
+	photoFile := form.File["profile_picture"][0]
+	photoFile1 := form.File["profile_picture"][0]
+	photoFile2 := form.File["profile_picture"][0]
+	photoFile3 := form.File["profile_picture"][0]
+	photoFile4 := form.File["profile_picture"][0]
+	photoFile5 := form.File["profile_picture"][0]
+	photoFile6 := form.File["profile_picture"][0]
+	photoFile7 := form.File["profile_picture"][0]
+
+	tasks := []*common.Task{
+		common.UploadImageTask{Function: uploadAndSaveProfilePicture(photoFile, userID)},
+	}
+
+	p := pool.NewPool(tasks, conf.Concurrency)
+	p.Run()
+
+	var numErrors int
+	for _, task := range p.Tasks {
+		if task.Err != nil {
+			log.Error(task.Err)
+			numErrors++
+		}
+		if numErrors >= 10 {
+			log.Error("Too many errors.")
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "true", "description": "Profile picture added"})
+
+}
+
+func DeleteProfilePicture(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+		return
+	}
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"success": "false", "description": "User not found"})
+		return
+	}
+
+	//Check if user has a profile picture
+	if userData.ProfilePicture.ID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": "false", "description": "You don't have a profile picture"})
+		return
+	}
+
+	if err := DeleteUserProfilePicture(userData.ProfilePicture); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": "false", "description": "Ha ocurrido un error inesperado", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "true", "description": "Profile picture deleted"})
+
+}
+
+func uploadAndSaveProfilePicture(header *multipart.FileHeader, userID uint) error {
+
+	s3key, url, err := amazonS3.UploadImageToS3(header)
+	if err != nil {
+		return err
+	}
+
+	newProfilePicture := models.ProfilePicture{
+		Url:    url,
+		S3Key:  s3key,
+		UserID: userID,
+	}
+
+	if err = newProfilePicture.Save(); err != nil {
+		return err
+	}
+
+	return nil
 
 }

@@ -31,7 +31,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
@@ -40,20 +40,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if u.Enabled == false{
+	if u.Enabled == false {
 		c.JSON(http.StatusForbidden, gin.H{"description": "Your user was disabled by an administrator", "detail": ""})
 		return
 	}
 
 	token, err := CreateToken(u.ID, u.Name, u.LastName, u.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happenedo", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrongo", "detail": err.Error()})
 		return
 	}
 
 	permissionList, err := models.GetUserPermissions(u.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something unexpected happened", "detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 

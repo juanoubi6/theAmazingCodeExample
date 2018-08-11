@@ -83,7 +83,7 @@ func createMockData() error {
 	role1 := models.Role{
 		ID:          1,
 		Description: "Admin",
-		Permissions: []models.Permission{permission1, permission2,permission3},
+		Permissions: []models.Permission{permission1, permission2, permission3},
 	}
 	role2 := models.Role{
 		ID:          2,

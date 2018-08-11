@@ -48,7 +48,7 @@ func validateRecoveryData(email string, recoveryCode string) (models.User, error
 
 	userData, found, err := models.GetUserByEmail(email)
 	if found == false {
-		return models.User{}, errors.New("No email informed")
+		return models.User{}, errors.New("Email not registered")
 	}
 	if err != nil {
 		return models.User{}, err

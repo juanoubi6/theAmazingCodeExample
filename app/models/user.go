@@ -89,6 +89,16 @@ func (emailConfirmationData *EmailConfirmation) Save() error {
 	return nil
 }
 
+func (profilePictureData *ProfilePicture) Save() error {
+
+	err := common.GetDatabase().Create(profilePictureData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetUserById(id uint) (user User, found bool, err error) {
 
 	user = User{}

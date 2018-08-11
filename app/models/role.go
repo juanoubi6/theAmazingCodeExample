@@ -1,8 +1,8 @@
 package models
 
 import (
-	"theAmazingCodeExample/app/common"
 	"errors"
+	"theAmazingCodeExample/app/common"
 )
 
 type Role struct {
@@ -53,20 +53,20 @@ func GetRoles(limit int, offset int) ([]Role, int, error) {
 
 }
 
-func (roleData *Role) ReplacePermissions(permissions []string) error{
+func (roleData *Role) ReplacePermissions(permissions []string) error {
 
 	var permissionsList []Permission
 
 	r := common.GetDatabase().Where("id in (?)", permissions).Find(&permissionsList)
-	if r.Error != nil{
+	if r.Error != nil {
 		return r.Error
 	}
 
-	if len(permissions) != len(permissionsList){
+	if len(permissions) != len(permissionsList) {
 		return errors.New("Some of the permissions you submitted are invalid")
 	}
 
-	if err := common.GetDatabase().Model(roleData).Association("Permissions").Replace(permissionsList).Error; err != nil{
+	if err := common.GetDatabase().Model(roleData).Association("Permissions").Replace(permissionsList).Error; err != nil {
 		return err
 	}
 
