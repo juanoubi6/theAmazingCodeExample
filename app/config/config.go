@@ -22,6 +22,8 @@ type Config struct {
 
 	SENDGRID_KEY_ID string
 
+	GOOGLE_PLACES_API_KEY string
+
 	TWILIO_SID        string
 	TWILIO_AUTH_TOKEN string
 	TWILIO_ACC_PHONE  string
@@ -57,6 +59,8 @@ func newConfig() Config {
 		AWS_REGION:            GetEnv("AWS_REGION", ""),
 
 		SENDGRID_KEY_ID: GetEnv("SENDGRID_KEY_ID", ""),
+
+		GOOGLE_PLACES_API_KEY: GetEnv("GOOGLE_PLACES_API_KEY", "AIzaSyCv2CdoVDMQ6S8jz2vtDYGTAwJojnxHJus"),
 
 		TWILIO_SID:        GetEnv("TWILIO_SID", ""),
 		TWILIO_AUTH_TOKEN: GetEnv("TWILIO_AUTH_TOKEN", ""),

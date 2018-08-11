@@ -79,6 +79,24 @@ func (userData *User) Delete() error {
 
 }
 
+func (userData *User) GetMainAddress() (Address, bool, error) {
+
+	addressData := Address{}
+
+	r := common.GetDatabase()
+
+	r = r.Where("user_id = ? and main_address = ?", userData.ID, true).First(&addressData)
+	if r.RecordNotFound() {
+		return addressData, false, nil
+	}
+	if r.Error != nil {
+		return addressData, true, r.Error
+	}
+
+	return addressData, true, nil
+
+}
+
 func (emailConfirmationData *EmailConfirmation) Save() error {
 
 	err := common.GetDatabase().Create(emailConfirmationData).Error

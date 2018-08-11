@@ -9,6 +9,7 @@ import (
 	"theAmazingCodeExample/app/config"
 	"theAmazingCodeExample/app/controllers/role"
 	"theAmazingCodeExample/app/controllers/user"
+	"theAmazingCodeExample/app/controllers/address"
 	"theAmazingCodeExample/app/middleware"
 	"theAmazingCodeExample/app/migrations"
 	"theAmazingCodeExample/app/security"
@@ -65,11 +66,11 @@ func CreateRouter() {
 		userProfile.PUT("/password", user.ChangePassword)
 
 		//Address endpoints
-		//userProfile.GET("/address", address.GetAddresses)
-		//userProfile.POST("/address", address.AddAddress)
-		//userProfile.PUT("/address/:id", address.ModifyAddress)
-		//userProfile.PUT("/address/:id/main", address.MarkAsMain)
-		//userProfile.DELETE("/address/:id", address.DeleteAddress)
+		userProfile.GET("/address", address.GetAddresses)
+		userProfile.POST("/address", address.AddAddress)
+		userProfile.PUT("/address/:id", address.ModifyAddress)
+		userProfile.PUT("/address/:id/main", address.MarkAsMain)
+		userProfile.DELETE("/address/:id", address.DeleteAddress)
 
 		//Phone endpoints
 		//userProfile.POST("/phone/verificationSMS", user.ModifyPhone)
