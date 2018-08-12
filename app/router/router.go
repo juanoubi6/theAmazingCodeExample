@@ -73,9 +73,9 @@ func CreateRouter() {
 		userProfile.DELETE("/address/:id", address.DeleteAddress)
 
 		//Phone endpoints
-		//userProfile.POST("/phone/verificationSMS", user.ModifyPhone)
-		//userProfile.POST("/phone", user.ConfirmPhoneCode)
-		//userProfile.GET("/resendVerificationSMS", user.SendVerificationSMS)
+		userProfile.PUT("/phone", user.ModifyPhone)
+		userProfile.POST("/phone/verify", user.ConfirmPhoneCode)
+		userProfile.GET("/resendVerificationSMS", user.SendVerificationSMS)
 
 		//Email change and verification
 		userProfile.PUT("/profile/email", user.ModifyEmail)

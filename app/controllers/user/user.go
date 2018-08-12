@@ -8,6 +8,7 @@ import (
 	"strings"
 	"theAmazingCodeExample/app/common"
 	"theAmazingCodeExample/app/helpers/amazonS3"
+	"theAmazingCodeExample/app/helpers/twilio"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
@@ -425,7 +426,7 @@ func ModifyUser(c *gin.Context) {
 			return
 		}
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong al obtener el rol", "detail": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong when obtaining the role", "detail": err.Error()})
 			return
 		}
 
@@ -679,5 +680,183 @@ func uploadAndSaveProfilePicture(header *multipart.FileHeader, userID uint) erro
 	}
 
 	return nil
+
+}
+
+func SendVerificationSMS(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+
+	//Get user data
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Get user phone confirmations (if he has any)
+	userPhoneConfirmation, found, err := userData.GetPhoneConfirmation()
+	if found == false {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Your user doesn't have any pending phone confirmations"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Create phone confirmation code
+	recoveryCode := time.Now().Unix()
+	phoneCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-4:]
+
+	//Send verification code
+	if err := twilio.SendVerificationSMS(phoneCode, userPhoneConfirmation.Phone); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Modify phone confirmation
+	userPhoneConfirmation.Code = phoneCode
+	if err := userPhoneConfirmation.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "SMS sent"})
+
+}
+
+func ModifyPhone(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+	phoneNumber := c.PostForm("phone_number")
+
+	//Check fields
+	if phoneNumber == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "No phone submitted"})
+		return
+	}
+
+	//Check phone number is valid
+	isValidPhoneNumber, err, _ := twilio.ValidatePhoneNumber(phoneNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+	if isValidPhoneNumber == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid phone number. The format should be +5411xxxxxxxx"})
+		return
+	}
+
+	//Check the cellphone is not being used by anyone else
+	phoneUsage, err := models.CheckPhoneUsage(phoneNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+	if phoneUsage == true {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Phone number already in use"})
+		return
+	}
+
+	//Get user
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Delete previous phone confirmations
+	if err := userData.DeletePhoneConfirmations(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
+		return
+	}
+
+	//Create phone confirmation
+	randomCode := time.Now().Unix()
+	phoneCode := strconv.Itoa(int(randomCode))[len(strconv.Itoa(int(randomCode)))-4:]
+
+	newPhoneConfirmation := models.PhoneConfirmation{
+		UserID: userData.ID,
+		Phone:  phoneNumber,
+		Code:   phoneCode,
+	}
+
+	if err = newPhoneConfirmation.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Send verification code
+	if err := twilio.SendVerificationSMS(phoneCode, phoneNumber); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "A SMS code has been sent to your phone"})
+
+}
+
+func ConfirmPhoneCode(c *gin.Context) {
+
+	userID := c.MustGet("id").(uint)
+	confirmationCode := c.PostForm("code")
+
+	//Check fields
+	if confirmationCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Confirmation code hasn't been submitted"})
+		return
+	}
+
+	//Get user
+	userData, found, err := models.GetUserById(userID)
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Get user phone confirmations (if he has any)
+	userPhoneConfirmation, found, err := userData.GetPhoneConfirmation()
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Your user doesn't have any pending phone change"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Check confirmation code matches
+	if userPhoneConfirmation.Code != confirmationCode {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid confirmation code"})
+		return
+	}
+
+	//Delete phone confirmations of the user
+	if err := userPhoneConfirmation.Delete(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
+		return
+	}
+
+	//Modify user
+	userData.Phone = userPhoneConfirmation.Phone
+	if err := userData.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Phone modified successfully"})
 
 }

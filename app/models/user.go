@@ -25,14 +25,14 @@ type User struct {
 
 type EmailConfirmation struct {
 	ID     uint `gorm:"primary_key" json:"-"`
-	Email	string
+	Email  string
 	UserID uint
 	Code   string
 }
 
 type PhoneConfirmation struct {
 	ID     uint `gorm:"primary_key" json:"-"`
-	Phone string
+	Phone  string
 	UserID uint
 	Code   string
 }
@@ -99,7 +99,7 @@ func (userData *User) GetMainAddress() (Address, bool, error) {
 
 }
 
-func (userData *User) DeleteEmailConfirmations ()error{
+func (userData *User) DeleteEmailConfirmations() error {
 
 	err := common.GetDatabase().Where("user_id = ?", userData.ID).Delete(EmailConfirmation{}).Error
 	if err != nil {
@@ -110,7 +110,18 @@ func (userData *User) DeleteEmailConfirmations ()error{
 
 }
 
-func (userData *User) GetEmailConfirmation() (EmailConfirmation, bool,error) {
+func (userData *User) DeletePhoneConfirmations() error {
+
+	err := common.GetDatabase().Where("user_id = ?", userData.ID).Delete(PhoneConfirmation{}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (userData *User) GetEmailConfirmation() (EmailConfirmation, bool, error) {
 
 	var emailConfirmation EmailConfirmation
 
@@ -125,6 +136,23 @@ func (userData *User) GetEmailConfirmation() (EmailConfirmation, bool,error) {
 	}
 
 	return emailConfirmation, true, nil
+}
+
+func (userData *User) GetPhoneConfirmation() (PhoneConfirmation, bool, error) {
+
+	var phoneConfirmation PhoneConfirmation
+
+	r := common.GetDatabase()
+
+	r = r.Where("user_id = ?", userData.ID).First(&phoneConfirmation)
+	if r.RecordNotFound() {
+		return phoneConfirmation, false, nil
+	}
+	if r.Error != nil {
+		return phoneConfirmation, true, r.Error
+	}
+
+	return phoneConfirmation, true, nil
 }
 
 func (emailConfirmationData *EmailConfirmation) Save() error {
@@ -150,6 +178,36 @@ func (emailConfirmationData *EmailConfirmation) Delete() error {
 func (emailConfirmationData *EmailConfirmation) Modify() error {
 
 	err := common.GetDatabase().Save(emailConfirmationData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (phoneConfirmationData *PhoneConfirmation) Save() error {
+
+	err := common.GetDatabase().Create(phoneConfirmationData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (phoneConfirmationData *PhoneConfirmation) Delete() error {
+
+	err := common.GetDatabase().Delete(phoneConfirmationData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (phoneConfirmationData *PhoneConfirmation) Modify() error {
+
+	err := common.GetDatabase().Save(phoneConfirmationData).Error
 	if err != nil {
 		return err
 	}
@@ -319,5 +377,24 @@ func GetUsers(limit int, offset int, idParam string, phoneParam string, emailPar
 	}
 
 	return users, quantity, nil
+
+}
+
+func CheckPhoneUsage(phone string) (bool, error) {
+
+	var userWithPhone int
+
+	r := common.GetDatabase()
+
+	r = r.Model(&User{}).Where("phone = ?", phone).Count(&userWithPhone)
+	if r.Error != nil {
+		return true, r.Error
+	}
+
+	if userWithPhone == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
 
 }
