@@ -742,13 +742,17 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Check phone number is valid
-	isValidPhoneNumber, err, _ := twilio.ValidatePhoneNumber(phoneNumber)
+	isValidPhoneNumber, err, phoneData := twilio.ValidatePhoneNumber(phoneNumber)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 	if isValidPhoneNumber == false {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid phone number. The format should be +5411xxxxxxxx"})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid phone number"})
+		return
+	}
+	if phoneData.CountryCode != "AR"{
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Only argentinian phone numbers are available"})
 		return
 	}
 

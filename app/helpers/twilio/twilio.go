@@ -62,8 +62,6 @@ func ValidatePhoneNumber(number string) (bool, error, CheckPhoneResult) {
 	if response.StatusCode != http.StatusOK {
 		return false, err, result
 	} else {
-		println(result.PhoneNumber)
-		println(result.CountryCode)
 		return true, nil, result
 	}
 
