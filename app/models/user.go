@@ -14,6 +14,7 @@ type User struct {
 	LastName             string `gorm:"null"`
 	Password             string `gorm:"null" json:"-"`
 	Email                string
+	GoogleID			 string `gorm:"null" json:"-"`
 	Phone                string         `gorm:"null"`
 	PasswordRecoveryCode string         `gorm:"null" json:"-"`
 	RoleID               uint           `gorm:"not null" json:"-"`
@@ -232,6 +233,24 @@ func GetUserById(id uint) (user User, found bool, err error) {
 	r := common.GetDatabase()
 
 	r = r.Unscoped().Preload("ProfilePicture").Preload("Role").Preload("Addresses").Preload("Addresses.PostalCode").Where("id = ?", id).First(&user)
+	if r.RecordNotFound() {
+		return user, false, nil
+	}
+
+	if r.Error != nil {
+		return user, true, r.Error
+	}
+
+	return user, true, nil
+}
+
+func GetUserByGoogleId(id string) (user User, found bool, err error) {
+
+	user = User{}
+
+	r := common.GetDatabase()
+
+	r = r.Unscoped().Preload("ProfilePicture").Preload("Role").Preload("Addresses").Preload("Addresses.PostalCode").Where("google_id = ?", id).First(&user)
 	if r.RecordNotFound() {
 		return user, false, nil
 	}

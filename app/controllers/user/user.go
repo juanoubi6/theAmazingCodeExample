@@ -8,11 +8,11 @@ import (
 	"strings"
 	"theAmazingCodeExample/app/common"
 	"theAmazingCodeExample/app/helpers/amazonS3"
+	"theAmazingCodeExample/app/helpers/sendgrid"
 	"theAmazingCodeExample/app/helpers/twilio"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
-	"theAmazingCodeExample/app/helpers/sendgrid"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -752,7 +752,7 @@ func ModifyPhone(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid phone number"})
 		return
 	}
-	if phoneData.CountryCode != "AR"{
+	if phoneData.CountryCode != "AR" {
 		c.JSON(http.StatusBadRequest, gin.H{"description": "Only argentinian phone numbers are available"})
 		return
 	}

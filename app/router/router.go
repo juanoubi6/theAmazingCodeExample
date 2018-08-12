@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"theAmazingCodeExample/app/config"
 	"theAmazingCodeExample/app/controllers/address"
+	"theAmazingCodeExample/app/controllers/oauthGoogle"
 	"theAmazingCodeExample/app/controllers/role"
 	"theAmazingCodeExample/app/controllers/user"
 	"theAmazingCodeExample/app/middleware"
@@ -31,6 +32,11 @@ func CreateRouter() {
 
 	public := router.Group("/")
 	{
+		//Oauth2 with Google
+		public.GET("", oauthGoogle.MainPage)
+		public.GET("/login", oauthGoogle.RedirectToGoogle)
+		public.GET("/googleCallback", oauthGoogle.HandleGoogleCallback)
+
 		public.GET("/migrations", migrations.Run)
 	}
 
