@@ -31,7 +31,7 @@ func SendConfirmationEmail(c *gin.Context) {
 	//Get user email confirmations (if he has any)
 	userEmailConfirmation, found, err := userData.GetEmailConfirmation()
 	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "Your user doesn't have a pending email chang"})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Your user doesn't have a pending email change"})
 		return
 	}
 	if err != nil {
@@ -53,7 +53,7 @@ func SendConfirmationEmail(c *gin.Context) {
 
 	//Modify email confirmation
 	userEmailConfirmation.Code = stringCode
-	if err := userEmailConfirmation.Save(); err != nil {
+	if err := userEmailConfirmation.Modify(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
