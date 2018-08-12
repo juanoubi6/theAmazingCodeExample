@@ -12,6 +12,7 @@ import (
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
+	"theAmazingCodeExample/app/helpers/sendgrid"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -177,12 +178,12 @@ func ModifyEmail(c *gin.Context) {
 		}
 
 		//Send email verification code
-		//emailSubject := "Confirmación de email"
-		//emailMessage := "Tu código de confirmación es: " + stringCode
-		//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
-		//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
-		//	return
-		//}
+		emailSubject := "Confirmación de email"
+		emailMessage := "Tu código de confirmación es: " + stringCode
+		if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+			return
+		}
 
 	} else {
 
@@ -242,12 +243,12 @@ func Signup(c *gin.Context) {
 	}
 
 	//Send email verification code
-	//emailSubject := "Confirmación de email"
-	//emailMessage := "Tu código de confirmación es: " + stringCode
-	//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
-	//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
-	//	return
-	//}
+	emailSubject := "Confirmación de email"
+	emailMessage := "Tu código de confirmación es: " + stringCode
+	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+		return
+	}
 
 	//Login information
 	token, err := security.CreateToken(newUser.ID, newUser.Name, newUser.LastName, newUser.Email)
@@ -277,7 +278,7 @@ func SendRecoveryMail(c *gin.Context) {
 
 	userData, found, err := models.GetUserByEmail(email)
 	if found == false {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Email not registered", "detail": ""})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Email not registered", "detail": ""})
 		return
 	}
 	if err != nil {
@@ -295,12 +296,12 @@ func SendRecoveryMail(c *gin.Context) {
 		return
 	}
 
-	//emailSubject := "Recupera tu contraseña"
-	//emailMessage := "Tu codigo de recuperación de contraseña es: " + stringCode
-	//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
-	//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
-	//	return
-	//}
+	emailSubject := "Recupera tu contraseña"
+	emailMessage := "Tu codigo de recuperación de contraseña es: " + stringCode
+	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"description": "Password recovery code sent"})
 

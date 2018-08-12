@@ -8,7 +8,7 @@ import (
 )
 
 var OwnerEmail string = "contact@theAmazingCodeExaple.com"
-var OwnerName string = "Juan Manuel Oubiña"
+var OwnerName string = "The Amazing Code Example"
 
 func SendGenericIndividualEmail(subjectValue string, messageValue string, userData models.User) error {
 

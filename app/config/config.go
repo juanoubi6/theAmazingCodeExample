@@ -58,7 +58,7 @@ func newConfig() Config {
 		AWS_BUCKET:            GetEnv("AWS_BUCKET", ""),
 		AWS_REGION:            GetEnv("AWS_REGION", ""),
 
-		SENDGRID_KEY_ID: GetEnv("SENDGRID_KEY_ID", ""),
+		SENDGRID_KEY_ID: GetEnv("SENDGRID_KEY_ID", "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"),
 
 		GOOGLE_PLACES_API_KEY: GetEnv("GOOGLE_PLACES_API_KEY", "AIzaSyCv2CdoVDMQ6S8jz2vtDYGTAwJojnxHJus"),
 
