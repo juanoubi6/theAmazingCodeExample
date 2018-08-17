@@ -8,6 +8,7 @@ import (
 func main() {
 	common.ConnectToDatabase()
 	//common.CreateAWSSession()
+	common.ConnectToRabbitMQ()
 	router.CreateRouter()
 	router.RunRouter()
 }
