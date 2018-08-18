@@ -2,8 +2,10 @@ package twilio
 
 import (
 	"encoding/json"
-	"net/http"
 	"theAmazingCodeExample/app/config"
+	"theAmazingCodeExample/app/helpers/rabbitMQ"
+	"theAmazingCodeExample/app/helpers/rabbitMQ/tasks"
+	"errors"
 )
 
 var (
@@ -15,35 +17,26 @@ var (
 type CheckPhoneResult struct {
 	CountryCode string `json:"country_code"`
 	PhoneNumber string `json:"phone_number"`
+	Error 		string `json:"error"`
 }
 
 func ValidatePhoneNumber(number string) (bool, error, CheckPhoneResult) {
 
-	//Create client
 	var result CheckPhoneResult
 
-	client := &http.Client{}
-
-	//Create request
-	request, err := http.NewRequest(http.MethodGet, "https://"+AccountSid+":"+AuthToken+"@lookups.twilio.com/v1/PhoneNumbers/"+number, nil)
-	if err != nil {
-		return false, err, result
+	resp,err := rabbitMQ.RPCcall(tasks.NewPhoneCheckTask(number))
+	if err != nil{
+		return false,err,result
 	}
 
-	//Fetch Request
-	response, err := client.Do(request)
-	if err != nil {
-		return false, err, result
+	if err = json.Unmarshal(resp,&result); err != nil{
+		return false,err,result
 	}
-	defer response.Body.Close()
 
-	json.NewDecoder(response.Body).Decode(&result)
-
-	//Check response
-	if response.StatusCode != http.StatusOK {
-		return false, err, result
-	} else {
-		return true, nil, result
+	if result.Error == ""{
+		return true,nil,result
+	}else{
+		return false,errors.New(result.Error),result
 	}
 
 }

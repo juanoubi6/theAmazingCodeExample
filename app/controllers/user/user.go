@@ -759,6 +759,9 @@ func ModifyPhone(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, gin.H{"description": "todo ok perrosky"})
+	return
+
 	//Check the cellphone is not being used by anyone else
 	phoneUsage, err := models.CheckPhoneUsage(phoneNumber)
 	if err != nil {
