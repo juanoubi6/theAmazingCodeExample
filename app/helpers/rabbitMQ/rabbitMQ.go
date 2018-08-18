@@ -5,20 +5,21 @@ import (
 	"theAmazingCodeExample/app/common"
 )
 
-var exchangeMap = map[string]string{
-	"sms": "sms_exchange",
+type RabbitMQTask interface{
+	GetMessageBytes() ([]byte,error)
+	GetQueue() (string)
 }
 
-func PublishMessageOnExchange(newTask RabbitMQTask) error {
+func PublishMessageOnQueue(newTask RabbitMQTask) error {
 
 	ch := common.GetRabbitMQChannel()
 	defer ch.Close()
 
-	exchangeName,exchangeType,_ := newTask.GetConfigInfo()
+	queueName := newTask.GetQueue()
 
-	err := ch.ExchangeDeclare(
-		exchangeName,
-		exchangeType,
+	//Queue declared but not needed if created previously
+	queue, err := ch.QueueDeclare(
+		queueName,
 		true,
 		false,
 		false,
@@ -35,8 +36,8 @@ func PublishMessageOnExchange(newTask RabbitMQTask) error {
 	}
 
 	err = ch.Publish(
-		exchangeName,
 		"",
+		queue.Name,
 		false,
 		false,
 		amqp.Publishing{

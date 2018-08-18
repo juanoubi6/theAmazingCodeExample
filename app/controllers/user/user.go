@@ -13,6 +13,8 @@ import (
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
+	"theAmazingCodeExample/app/helpers/rabbitMQ/tasks"
+	"theAmazingCodeExample/app/helpers/rabbitMQ"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -714,8 +716,8 @@ func SendVerificationSMS(c *gin.Context) {
 	recoveryCode := time.Now().Unix()
 	phoneCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-4:]
 
-	//Send verification code
-	if err := twilio.SendVerificationSMS(phoneCode, userPhoneConfirmation.Phone); err != nil {
+	//Create task to send verification code
+	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(userPhoneConfirmation.Phone,phoneCode)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
@@ -801,7 +803,7 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Send verification code
-	if err := twilio.SendVerificationSMS(phoneCode, phoneNumber); err != nil {
+	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber,phoneCode)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}

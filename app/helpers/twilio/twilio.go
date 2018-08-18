@@ -2,7 +2,6 @@ package twilio
 
 import (
 	"encoding/json"
-	"github.com/subosito/twilio"
 	"net/http"
 	"theAmazingCodeExample/app/config"
 )
@@ -16,24 +15,6 @@ var (
 type CheckPhoneResult struct {
 	CountryCode string `json:"country_code"`
 	PhoneNumber string `json:"phone_number"`
-}
-
-func SendVerificationSMS(verificationCode string, to string) error {
-
-	// Initialize twilio client
-	c := twilio.NewClient(AccountSid, AuthToken, nil)
-
-	// Send Message
-	params := twilio.MessageParams{
-		Body: "Your verification code is: " + verificationCode,
-	}
-	_, _, err := c.Messages.Send(AccountPhone, to, params)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
 }
 
 func ValidatePhoneNumber(number string) (bool, error, CheckPhoneResult) {

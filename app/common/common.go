@@ -8,7 +8,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"theAmazingCodeExample/app/config"
 	"github.com/streadway/amqp"
-	"google.golang.org/grpc/credentials/alts/core/conn"
 )
 
 var db *gorm.DB
