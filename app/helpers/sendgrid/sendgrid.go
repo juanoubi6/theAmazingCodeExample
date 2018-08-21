@@ -1,33 +1,37 @@
 package sendgrid
 
 import (
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"theAmazingCodeExample/app/config"
 	"theAmazingCodeExample/app/models"
+	"theAmazingCodeExample/app/helpers/nats/messages"
+	"theAmazingCodeExample/app/helpers/nats"
+	"encoding/json"
+	"errors"
 )
-
-var OwnerEmail string = "contact@theAmazingCodeExaple.com"
-var OwnerName string = "The Amazing Code Example"
 
 func SendGenericIndividualEmail(subjectValue string, messageValue string, userData models.User) error {
 
-	from := mail.NewEmail(OwnerName, OwnerEmail)
-	subject := subjectValue
-	to := mail.NewEmail(userData.Name, userData.Email)
-	plainTextContent := "The Amazing Code Example"
-	htmlContent := messageValue
+	var result messages.IndividualEmailSendResponse
 
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
-	client := sendgrid.NewSendClient(config.GetConfig().SENDGRID_KEY_ID)
+	natsMessage := messages.IndividualEmailSendRequest{
+		Subject:subjectValue,
+		Message:messageValue,
+		UserEmail:userData.Email,
+		UserName:userData.Name,
+	}
 
-	response, err := client.Send(message)
-	if err != nil {
-		println(err.Error())
+	response,err := nats.SendNatsMessage(natsMessage)
+	if err != nil{
 		return err
-	} else {
-		println(response.Body)
+	}
+
+	if err = json.Unmarshal(response,&result); err != nil{
+		return err
+	}
+
+	if result.Error == ""{
 		return nil
+	}else{
+		return errors.New(result.Error)
 	}
 
 }

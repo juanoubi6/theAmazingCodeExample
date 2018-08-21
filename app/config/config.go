@@ -8,6 +8,8 @@ type Config struct {
 	JWT_SECRET string
 	CORS       string
 
+	NATS_URL string
+
 	RABBITMQ_USER	string
 	RABBITMQ_PASSWORD	string
 	RABBITMQ_HOST	string
@@ -52,6 +54,8 @@ func newConfig() Config {
 		PORT:       GetEnv("PORT", "5000"),
 		JWT_SECRET: GetEnv("JWT_SECRET", "j8Ah4kO3"),
 		CORS:       GetEnv("CORS", ""),
+
+		NATS_URL: GetEnv("NATS_URL", "0.0.0.0:4222"),
 
 		RABBITMQ_HOST: GetEnv("RABBITMQ_HOST", "localhost"),
 		RABBITMQ_PORT: GetEnv("RABBITMQ_PORT", "5672"),

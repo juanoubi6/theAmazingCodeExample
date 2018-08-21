@@ -1,9 +1,13 @@
 Code example for test purposes
 
+Tools needed to run this example:
+-RabbitMQ (configure host and port on config.go)
+-NATS
+
 Functionalities:
 
 Signup/Login
--Login with email/password or Google account using oauth2
+-Login with email/password or Google account using oauth2. JWT will be generated and exchanged in each request
 -Password recover (via email)
 
 User profile

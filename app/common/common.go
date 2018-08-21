@@ -8,11 +8,13 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"theAmazingCodeExample/app/config"
 	"github.com/streadway/amqp"
+	"github.com/nats-io/go-nats"
 )
 
 var db *gorm.DB
 var awsSession *session.Session
 var rabbitMqConnection *amqp.Connection
+var natsConnection *nats.Conn
 
 func ConnectToDatabase() {
 	var err error
@@ -66,4 +68,30 @@ func CreateAWSSession() {
 
 func GetAWSSession() *session.Session {
 	return awsSession
+}
+
+func ConnectToNats(){
+
+	nc, err := nats.Connect(config.GetConfig().NATS_URL)
+	if err != nil{
+		panic(err)
+	}
+
+	natsConnection = nc
+
+}
+
+func GetNatsEncodedConnection() *nats.EncodedConn{
+
+	c, err := nats.NewEncodedConn(natsConnection, nats.JSON_ENCODER)
+	if err != nil{
+		panic(err)
+	}
+
+	return c
+
+}
+
+func GetNatsConnection() *nats.Conn{
+	return natsConnection
 }
