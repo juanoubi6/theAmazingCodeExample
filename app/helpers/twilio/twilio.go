@@ -3,8 +3,8 @@ package twilio
 import (
 	"encoding/json"
 	"theAmazingCodeExample/app/config"
-	"theAmazingCodeExample/app/helpers/rabbitMQ"
-	"theAmazingCodeExample/app/helpers/rabbitMQ/tasks"
+	"theAmazingCodeExample/app/communications/rabbitMQ"
+	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
 	"errors"
 )
 
@@ -14,15 +14,9 @@ var (
 	AccountPhone = config.GetConfig().TWILIO_ACC_PHONE
 )
 
-type CheckPhoneResult struct {
-	CountryCode string `json:"country_code"`
-	PhoneNumber string `json:"phone_number"`
-	Error 		string `json:"error"`
-}
+func ValidatePhoneNumber(number string) (bool, error, tasks.PhoneCheckTaskResponse) {
 
-func ValidatePhoneNumber(number string) (bool, error, CheckPhoneResult) {
-
-	var result CheckPhoneResult
+	var result tasks.PhoneCheckTaskResponse
 
 	resp,err := rabbitMQ.RPCcall(tasks.NewPhoneCheckTask(number))
 	if err != nil{

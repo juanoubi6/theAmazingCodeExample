@@ -19,7 +19,7 @@ func SendNatsMessage(newMessage NatsMessage) ([]byte,error){
 		return nil, err
 	}
 
-	response, err := conn.Request(newMessage.GetTopic(),messageBody,1*time.Second)
+	response, err := conn.Request(newMessage.GetTopic(),messageBody,20*time.Second)
 	if err != nil{
 		println(err.Error())
 		return nil,err

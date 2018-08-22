@@ -2,8 +2,8 @@ package sendgrid
 
 import (
 	"theAmazingCodeExample/app/models"
-	"theAmazingCodeExample/app/helpers/nats/messages"
-	"theAmazingCodeExample/app/helpers/nats"
+	"theAmazingCodeExample/app/communications/nats/messages"
+	"theAmazingCodeExample/app/communications/nats"
 	"encoding/json"
 	"errors"
 )

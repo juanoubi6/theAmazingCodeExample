@@ -13,6 +13,12 @@ type PhoneCheckMessage struct{
 	PhoneNumber string `json:"phone_number"`
 }
 
+type PhoneCheckTaskResponse struct {
+	CountryCode string `json:"country_code"`
+	PhoneNumber string `json:"phone_number"`
+	Error 		string `json:"error"`
+}
+
 func NewPhoneCheckTask (phoneNumber string) PhoneCheckTask{
 
 	phoneCheckMessage := PhoneCheckMessage{

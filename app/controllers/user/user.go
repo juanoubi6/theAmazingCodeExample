@@ -13,8 +13,8 @@ import (
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
-	"theAmazingCodeExample/app/helpers/rabbitMQ/tasks"
-	"theAmazingCodeExample/app/helpers/rabbitMQ"
+	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
+	"theAmazingCodeExample/app/communications/rabbitMQ"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -758,9 +758,6 @@ func ModifyPhone(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"description": "Only argentinian phone numbers are available"})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"description": "todo ok perrosky"})
-	return
 
 	//Check the cellphone is not being used by anyone else
 	phoneUsage, err := models.CheckPhoneUsage(phoneNumber)
