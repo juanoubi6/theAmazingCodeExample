@@ -10,10 +10,10 @@ type Config struct {
 
 	NATS_URL string
 
-	RABBITMQ_USER	string
-	RABBITMQ_PASSWORD	string
-	RABBITMQ_HOST	string
-	RABBITMQ_PORT	string
+	RABBITMQ_USER     string
+	RABBITMQ_PASSWORD string
+	RABBITMQ_HOST     string
+	RABBITMQ_PORT     string
 
 	DB_TYPE     string
 	DB_USERNAME string
@@ -57,10 +57,10 @@ func newConfig() Config {
 
 		NATS_URL: GetEnv("NATS_URL", "0.0.0.0:4222"),
 
-		RABBITMQ_HOST: GetEnv("RABBITMQ_HOST", "localhost"),
-		RABBITMQ_PORT: GetEnv("RABBITMQ_PORT", "5672"),
-		RABBITMQ_USER:  GetEnv("RABBITMQ_USER", "guest"),
-		RABBITMQ_PASSWORD:  GetEnv("RABBITMQ_PASSWORD", "guest"),
+		RABBITMQ_HOST:     GetEnv("RABBITMQ_HOST", "localhost"),
+		RABBITMQ_PORT:     GetEnv("RABBITMQ_PORT", "5672"),
+		RABBITMQ_USER:     GetEnv("RABBITMQ_USER", "guest"),
+		RABBITMQ_PASSWORD: GetEnv("RABBITMQ_PASSWORD", "guest"),
 
 		DB_TYPE:     GetEnv("DB_TYPE", "mysql"),
 		DB_USERNAME: GetEnv("DB_USERNAME", "root"),

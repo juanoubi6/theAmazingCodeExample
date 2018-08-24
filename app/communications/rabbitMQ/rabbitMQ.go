@@ -2,16 +2,16 @@ package rabbitMQ
 
 import (
 	"github.com/streadway/amqp"
-	"theAmazingCodeExample/app/common"
 	"math/rand"
+	"theAmazingCodeExample/app/common"
 )
 
-type RabbitMQTask interface{
-	GetMessageBytes() ([]byte,error)
-	GetQueue() (string)
+type RabbitMQTask interface {
+	GetMessageBytes() ([]byte, error)
+	GetQueue() string
 }
 
-func PublishMessageOnQueue(newTask RabbitMQTask) (error) {
+func PublishMessageOnQueue(newTask RabbitMQTask) error {
 
 	ch := common.GetRabbitMQChannel()
 	defer ch.Close()
@@ -54,7 +54,7 @@ func PublishMessageOnQueue(newTask RabbitMQTask) (error) {
 
 }
 
-func RPCcall(newTask RabbitMQTask) ([]byte,error){
+func RPCcall(newTask RabbitMQTask) ([]byte, error) {
 
 	var response []byte
 
@@ -70,7 +70,7 @@ func RPCcall(newTask RabbitMQTask) ([]byte,error){
 		nil,
 	)
 	if err != nil {
-		return response,err
+		return response, err
 	}
 
 	anonQueue, err := ch.QueueDeclare(
@@ -82,7 +82,7 @@ func RPCcall(newTask RabbitMQTask) ([]byte,error){
 		nil,
 	)
 	if err != nil {
-		return response,err
+		return response, err
 	}
 
 	anonQueueMessages, err := ch.Consume(
@@ -95,14 +95,14 @@ func RPCcall(newTask RabbitMQTask) ([]byte,error){
 		nil,
 	)
 	if err != nil {
-		return response,err
+		return response, err
 	}
 
 	corrId := randomString(32)
 
 	messageBody, err := newTask.GetMessageBytes()
 	if err != nil {
-		return response,err
+		return response, err
 	}
 
 	err = ch.Publish(
@@ -117,7 +117,7 @@ func RPCcall(newTask RabbitMQTask) ([]byte,error){
 			Body:          messageBody,
 		})
 	if err != nil {
-		return response,err
+		return response, err
 	}
 
 	for d := range anonQueueMessages {
@@ -127,7 +127,7 @@ func RPCcall(newTask RabbitMQTask) ([]byte,error){
 		}
 	}
 
-	return response,nil
+	return response, nil
 
 }
 

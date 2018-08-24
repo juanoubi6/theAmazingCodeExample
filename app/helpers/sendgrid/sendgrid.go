@@ -1,11 +1,11 @@
 package sendgrid
 
 import (
-	"theAmazingCodeExample/app/models"
-	"theAmazingCodeExample/app/communications/nats/messages"
-	"theAmazingCodeExample/app/communications/nats"
 	"encoding/json"
 	"errors"
+	"theAmazingCodeExample/app/communications/nats"
+	"theAmazingCodeExample/app/communications/nats/messages"
+	"theAmazingCodeExample/app/models"
 )
 
 func SendGenericIndividualEmail(subjectValue string, messageValue string, userData models.User) error {
@@ -13,24 +13,24 @@ func SendGenericIndividualEmail(subjectValue string, messageValue string, userDa
 	var result messages.IndividualEmailSendResponse
 
 	natsMessage := messages.IndividualEmailSendRequest{
-		Subject:subjectValue,
-		Message:messageValue,
-		UserEmail:userData.Email,
-		UserName:userData.Name,
+		Subject:   subjectValue,
+		Message:   messageValue,
+		UserEmail: userData.Email,
+		UserName:  userData.Name,
 	}
 
-	response,err := nats.SendNatsMessage(natsMessage)
-	if err != nil{
+	response, err := nats.SendNatsMessage(natsMessage)
+	if err != nil {
 		return err
 	}
 
-	if err = json.Unmarshal(response,&result); err != nil{
+	if err = json.Unmarshal(response, &result); err != nil {
 		return err
 	}
 
-	if result.Error == ""{
+	if result.Error == "" {
 		return nil
-	}else{
+	} else {
 		return errors.New(result.Error)
 	}
 

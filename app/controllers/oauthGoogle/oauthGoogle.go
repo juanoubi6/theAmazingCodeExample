@@ -45,40 +45,40 @@ func RedirectToGoogle(c *gin.Context) {
 func HandleGoogleCallback(c *gin.Context) {
 	content, err := getUserInfo(c.Query("state"), c.Query("code"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description":"Something went wrong","detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
 	var googleData GoogleData
 	err = json.Unmarshal(content, &googleData)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description":"Something went wrong","detail": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
 	var userData models.User
 
 	//Check if user already exists. If not, create it.
-	userData,found,err := models.GetUserByGoogleId(googleData.GoogleID)
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{"description":"Something went wrong","detail": err.Error()})
+	userData, found, err := models.GetUserByGoogleId(googleData.GoogleID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
-	if found == false{
+	if found == false {
 
 		//Check if there is an user with this email
-		userData,found,err = models.GetUserByEmail(googleData.Email)
-		if err != nil{
-			c.JSON(http.StatusInternalServerError, gin.H{"description":"Something went wrong","detail": err.Error()})
+		userData, found, err = models.GetUserByEmail(googleData.Email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 			return
 		}
-		if found == true{
+		if found == true {
 			userData.GoogleID = googleData.GoogleID
 			if err := userData.Modify(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error(), "detail": err.Error()})
 				return
 			}
-		}else{
+		} else {
 			userData = models.User{
 				Email:    googleData.Email,
 				Name:     googleData.Name,

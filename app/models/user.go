@@ -14,7 +14,7 @@ type User struct {
 	LastName             string `gorm:"null"`
 	Password             string `gorm:"null" json:"-"`
 	Email                string
-	GoogleID			 string `gorm:"null" json:"-"`
+	GoogleID             string         `gorm:"null" json:"-"`
 	Phone                string         `gorm:"null"`
 	PasswordRecoveryCode string         `gorm:"null" json:"-"`
 	RoleID               uint           `gorm:"not null" json:"-"`

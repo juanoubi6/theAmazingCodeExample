@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"theAmazingCodeExample/app/config"
-	"github.com/streadway/amqp"
 	"github.com/nats-io/go-nats"
+	"github.com/streadway/amqp"
+	"theAmazingCodeExample/app/config"
 )
 
 var db *gorm.DB
@@ -31,8 +31,8 @@ func ConnectToDatabase() {
 
 }
 
-func ConnectToRabbitMQ(){
-	connection, err := amqp.Dial("amqp://" + config.GetConfig().RABBITMQ_USER + ":" + config.GetConfig().RABBITMQ_PASSWORD  + "@" + config.GetConfig().RABBITMQ_HOST + ":" + config.GetConfig().RABBITMQ_PORT+ "/")
+func ConnectToRabbitMQ() {
+	connection, err := amqp.Dial("amqp://" + config.GetConfig().RABBITMQ_USER + ":" + config.GetConfig().RABBITMQ_PASSWORD + "@" + config.GetConfig().RABBITMQ_HOST + ":" + config.GetConfig().RABBITMQ_PORT + "/")
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +53,6 @@ func GetRabbitMQChannel() *amqp.Channel {
 	return ch
 }
 
-
 func CreateAWSSession() {
 	creds := credentials.NewStaticCredentials(config.GetConfig().AWS_ACCESS_KEY_ID, config.GetConfig().AWS_SECRET_ACCESS_KEY, "")
 
@@ -70,10 +69,10 @@ func GetAWSSession() *session.Session {
 	return awsSession
 }
 
-func ConnectToNats(){
+func ConnectToNats() {
 
 	nc, err := nats.Connect(config.GetConfig().NATS_URL)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -81,10 +80,10 @@ func ConnectToNats(){
 
 }
 
-func GetNatsEncodedConnection() *nats.EncodedConn{
+func GetNatsEncodedConnection() *nats.EncodedConn {
 
 	c, err := nats.NewEncodedConn(natsConnection, nats.JSON_ENCODER)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -92,6 +91,6 @@ func GetNatsEncodedConnection() *nats.EncodedConn{
 
 }
 
-func GetNatsConnection() *nats.Conn{
+func GetNatsConnection() *nats.Conn {
 	return natsConnection
 }

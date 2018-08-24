@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"strings"
 	"theAmazingCodeExample/app/common"
+	"theAmazingCodeExample/app/communications/rabbitMQ"
+	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
 	"theAmazingCodeExample/app/helpers/amazonS3"
 	"theAmazingCodeExample/app/helpers/sendgrid"
 	"theAmazingCodeExample/app/helpers/twilio"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
-	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
-	"theAmazingCodeExample/app/communications/rabbitMQ"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -717,7 +717,7 @@ func SendVerificationSMS(c *gin.Context) {
 	phoneCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-4:]
 
 	//Create task to send verification code
-	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(userPhoneConfirmation.Phone,phoneCode)); err != nil {
+	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(userPhoneConfirmation.Phone, phoneCode)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
@@ -803,7 +803,7 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Send verification code
-	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber,phoneCode)); err != nil {
+	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber, phoneCode)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
