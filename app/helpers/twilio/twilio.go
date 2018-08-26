@@ -5,13 +5,6 @@ import (
 	"errors"
 	"theAmazingCodeExample/app/communications/rabbitMQ"
 	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
-	"theAmazingCodeExample/app/config"
-)
-
-var (
-	AccountSid   = config.GetConfig().TWILIO_SID
-	AuthToken    = config.GetConfig().TWILIO_AUTH_TOKEN
-	AccountPhone = config.GetConfig().TWILIO_ACC_PHONE
 )
 
 func ValidatePhoneNumber(number string) (bool, error, tasks.PhoneCheckTaskResponse) {
