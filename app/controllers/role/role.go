@@ -11,7 +11,7 @@ func GetRoles(c *gin.Context) {
 
 	roleList, quantity, err := models.GetRoles(c.MustGet("limit").(int), c.MustGet("offset").(int))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": "false", "description": "Something went wrong", "detail": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 
