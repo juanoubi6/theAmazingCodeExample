@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+	"bufio"
+	"strings"
+)
 
 type Config struct {
 	ENV        string
@@ -27,21 +31,20 @@ type Config struct {
 	AWS_BUCKET            string
 	AWS_REGION            string
 
-	SENDGRID_KEY_ID string
-
 	GOOGLE_PLACES_API_KEY string
 	GOOGLE_CLIENT_ID      string
 	GOOGLE_CLIENT_SECRET  string
 
-	TWILIO_SID        string
-	TWILIO_AUTH_TOKEN string
-	TWILIO_ACC_PHONE  string
 }
 
 var instance *Config
 
 func GetConfig() *Config {
 	if instance == nil {
+		err := readEnv()
+		if err != nil{
+			panic(err)
+		}
 		config := newConfig()
 		instance = &config
 	}
@@ -74,15 +77,10 @@ func newConfig() Config {
 		AWS_BUCKET:            GetEnv("AWS_BUCKET", ""),
 		AWS_REGION:            GetEnv("AWS_REGION", ""),
 
-		SENDGRID_KEY_ID: GetEnv("SENDGRID_KEY_ID", ""),
-
 		GOOGLE_PLACES_API_KEY: GetEnv("GOOGLE_PLACES_API_KEY", ""),
 		GOOGLE_CLIENT_ID:      GetEnv("GOOGLE_CLIENT_ID", ""),
 		GOOGLE_CLIENT_SECRET:  GetEnv("GOOGLE_CLIENT_SECRET", ""),
 
-		TWILIO_SID:        GetEnv("TWILIO_SID", ""),
-		TWILIO_AUTH_TOKEN: GetEnv("TWILIO_AUTH_TOKEN", ""),
-		TWILIO_ACC_PHONE:  GetEnv("TWILIO_ACC_PHONE", ""),
 	}
 }
 
@@ -91,4 +89,29 @@ func GetEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+func readEnv() error{
+	file, err := os.Open(".env")
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		values := strings.Split(scanner.Text(),"=")
+		if len(values)==2{
+			err = os.Setenv(values[0],values[1])
+			if err != nil{
+				return err
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
