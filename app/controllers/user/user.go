@@ -48,12 +48,12 @@ func SendConfirmationEmail(c *gin.Context) {
 	stringCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-5:]
 
 	//Send email verification code
-	//emailSubject := "Confirmación de email"
-	//emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: https://virtual-box-web-app-develop.herokuapp.com/confirmar?code=" + stringCode + "&email=" + userEmailConfirmation.Email + " .Tu código de confirmación es: " + stringCode
-	//if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
-	//	c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
-	//	return
-	//}
+	emailSubject := "Confirmación de email"
+	emailMessage := "Tu código de confirmación es: " + stringCode
+	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
+		return
+	}
 
 	//Modify email confirmation
 	userEmailConfirmation.Code = stringCode
@@ -62,7 +62,7 @@ func SendConfirmationEmail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"description": "Email sent"})
+	c.JSON(http.StatusOK, gin.H{"description": "Confirmation email sent"})
 
 }
 
@@ -218,7 +218,6 @@ func Signup(c *gin.Context) {
 	hash, _ := security.HashPassword(password)
 
 	newUser := models.User{
-		Email:    emailValue,
 		Name:     name,
 		LastName: lastName,
 		Password: hash,
@@ -237,6 +236,7 @@ func Signup(c *gin.Context) {
 	newEmailConfirmation := models.EmailConfirmation{
 		UserID: newUser.ID,
 		Code:   stringCode,
+		Email:  emailValue,
 	}
 
 	if err := newEmailConfirmation.Save(); err != nil {
@@ -246,27 +246,13 @@ func Signup(c *gin.Context) {
 
 	//Send email verification code
 	emailSubject := "Confirmación de email"
-	emailMessage := "Tu código de confirmación es: " + stringCode
+	emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: https://localhost:5000/confirmEmail?code=" + stringCode + "&email=" + emailValue
 	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 		return
 	}
 
-	//Login information
-	token, err := security.CreateToken(newUser.ID, newUser.Name, newUser.LastName, newUser.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err})
-		return
-	}
-
-	permissionList, err := models.GetUserPermissions(newUser.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"description": map[string]interface{}{"token": token, "email": newUser.Email, "name": newUser.Name, "lastName": newUser.LastName, "id": newUser.GUID, "permissions": permissionList, "profilePicture": newUser.ProfilePicture.Url}})
-
+	c.JSON(http.StatusOK, gin.H{"description": "Account created. Please confirm your email before you can access the platform"})
 }
 
 func SendRecoveryMail(c *gin.Context) {
@@ -865,5 +851,60 @@ func ConfirmPhoneCode(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"description": "Phone modified successfully"})
+
+}
+
+func ConfirmEmail(c *gin.Context) {
+
+	email := c.Query("email")
+	code := c.Query("code")
+
+	if email == "" || code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Email or code missing"})
+		return
+	}
+
+	//Get user data
+	userData, found, err := models.GetUserByEmail(email)
+	if found == false {
+		c.JSON(http.StatusNotFound, gin.H{"description": "User not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Get user email confirmations (if he has any)
+	userEmailConfirmation, found, err := userData.GetEmailConfirmation()
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "You don't have a pending email change"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	//Check confirmation code matches
+	if userEmailConfirmation.Code != code {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid change code"})
+		return
+	}
+
+	//Delete email confirmations of the user
+	if err := userEmailConfirmation.Delete(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
+		return
+	}
+
+	//Modify user
+	userData.Email = userEmailConfirmation.Email
+	if err := userData.Modify(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"description": "Email confirmed successfully. You can now log in"})
 
 }

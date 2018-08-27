@@ -1,8 +1,8 @@
 package config
 
 import (
-	"os"
 	"bufio"
+	"os"
 	"strings"
 )
 
@@ -34,7 +34,6 @@ type Config struct {
 	GOOGLE_PLACES_API_KEY string
 	GOOGLE_CLIENT_ID      string
 	GOOGLE_CLIENT_SECRET  string
-
 }
 
 var instance *Config
@@ -42,7 +41,7 @@ var instance *Config
 func GetConfig() *Config {
 	if instance == nil {
 		err := readEnv()
-		if err != nil{
+		if err != nil {
 			panic(err)
 		}
 		config := newConfig()
@@ -80,7 +79,6 @@ func newConfig() Config {
 		GOOGLE_PLACES_API_KEY: GetEnv("GOOGLE_PLACES_API_KEY", ""),
 		GOOGLE_CLIENT_ID:      GetEnv("GOOGLE_CLIENT_ID", ""),
 		GOOGLE_CLIENT_SECRET:  GetEnv("GOOGLE_CLIENT_SECRET", ""),
-
 	}
 }
 
@@ -91,7 +89,7 @@ func GetEnv(key, fallback string) string {
 	return fallback
 }
 
-func readEnv() error{
+func readEnv() error {
 	file, err := os.Open(".env")
 	if err != nil {
 		return nil
@@ -100,10 +98,10 @@ func readEnv() error{
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		values := strings.Split(scanner.Text(),"=")
-		if len(values)==2{
-			err = os.Setenv(values[0],values[1])
-			if err != nil{
+		values := strings.Split(scanner.Text(), "=")
+		if len(values) == 2 {
+			err = os.Setenv(values[0], values[1])
+			if err != nil {
 				return err
 			}
 		}

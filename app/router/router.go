@@ -12,7 +12,6 @@ import (
 	"theAmazingCodeExample/app/controllers/role"
 	"theAmazingCodeExample/app/controllers/user"
 	"theAmazingCodeExample/app/middleware"
-	"theAmazingCodeExample/app/migrations"
 	"theAmazingCodeExample/app/security"
 )
 
@@ -36,8 +35,6 @@ func CreateRouter() {
 		public.GET("", oauthGoogle.MainPage)
 		public.GET("/login", oauthGoogle.RedirectToGoogle)
 		public.GET("/googleCallback", oauthGoogle.HandleGoogleCallback)
-
-		public.GET("/migrations", migrations.Run)
 	}
 
 	/* Routes */
@@ -47,6 +44,9 @@ func CreateRouter() {
 		loginRoutes.POST("/signup", user.Signup)
 		loginRoutes.POST("/recoverPassword", user.SendRecoveryMail)
 		loginRoutes.PUT("/password", user.ChangePasswordFromRecoveryCode)
+
+		//This should be on the front end
+		loginRoutes.GET("/confirmEmail", user.ConfirmEmail)
 	}
 
 	userManagment := router.Group("/users", middleware.IsAdmin(), middleware.ValidateTokenAndPermission("User Management"))
