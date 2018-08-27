@@ -31,13 +31,12 @@ func CreateRouter() {
 
 	public := router.Group("/")
 	{
-		//Oauth2 with Google
+		//Oauth2 with Google. Needs frontend
 		public.GET("", oauthGoogle.MainPage)
 		public.GET("/login", oauthGoogle.RedirectToGoogle)
 		public.GET("/googleCallback", oauthGoogle.HandleGoogleCallback)
 	}
 
-	/* Routes */
 	loginRoutes := router.Group("/")
 	{
 		loginRoutes.POST("/login", security.Login)
@@ -45,7 +44,7 @@ func CreateRouter() {
 		loginRoutes.POST("/recoverPassword", user.SendRecoveryMail)
 		loginRoutes.PUT("/password", user.ChangePasswordFromRecoveryCode)
 
-		//This should be on the front end
+		//This should be on the front end. When the frontend is made, this should be a POST and the query params would be converted to body params
 		loginRoutes.GET("/confirmEmail", user.ConfirmEmail)
 	}
 
