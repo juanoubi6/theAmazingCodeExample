@@ -244,9 +244,12 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	//Sendgrid function needs this value
+	newUser.Email = emailValue
+
 	//Send email verification code
 	emailSubject := "Confirmación de email"
-	emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: https://localhost:5000/confirmEmail?code=" + stringCode + "&email=" + emailValue
+	emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: http://localhost:5000/confirmEmail?code=" + stringCode + "&email=" + emailValue
 	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 		return
@@ -864,8 +867,19 @@ func ConfirmEmail(c *gin.Context) {
 		return
 	}
 
+	//Get user email confirmations by code
+	userEmailConfirmation, found, err := models.GetEmailConfirmationByCode(code)
+	if found == false {
+		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid code"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
+		return
+	}
+
 	//Get user data
-	userData, found, err := models.GetUserByEmail(email)
+	userData, found, err := models.GetUserById(userEmailConfirmation.UserID)
 	if found == false {
 		c.JSON(http.StatusNotFound, gin.H{"description": "User not found"})
 		return
@@ -875,33 +889,16 @@ func ConfirmEmail(c *gin.Context) {
 		return
 	}
 
-	//Get user email confirmations (if he has any)
-	userEmailConfirmation, found, err := userData.GetEmailConfirmation()
-	if found == false {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "You don't have a pending email change"})
-		return
-	}
-	if err != nil {
+	//Modify user
+	userData.Email = userEmailConfirmation.Email
+	if err := userData.Modify(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
-		return
-	}
-
-	//Check confirmation code matches
-	if userEmailConfirmation.Code != code {
-		c.JSON(http.StatusBadRequest, gin.H{"description": "Invalid change code"})
 		return
 	}
 
 	//Delete email confirmations of the user
 	if err := userEmailConfirmation.Delete(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": err.Error()})
-		return
-	}
-
-	//Modify user
-	userData.Email = userEmailConfirmation.Email
-	if err := userData.Modify(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
 

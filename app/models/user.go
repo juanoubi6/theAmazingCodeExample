@@ -28,7 +28,7 @@ type EmailConfirmation struct {
 	ID     uint `gorm:"primary_key" json:"-"`
 	Email  string
 	UserID uint
-	Code   string
+	Code   string `gorm:"unique_index:idx_unique_code" json:"ID"`
 }
 
 type PhoneConfirmation struct {
@@ -242,6 +242,24 @@ func GetUserById(id uint) (user User, found bool, err error) {
 	}
 
 	return user, true, nil
+}
+
+func GetEmailConfirmationByCode(code string) (EmailConfirmation, bool, error) {
+
+	emailConfirmation := EmailConfirmation{}
+
+	r := common.GetDatabase()
+
+	r = r.Where("code = ?", code).First(&emailConfirmation)
+	if r.RecordNotFound() {
+		return emailConfirmation, false, nil
+	}
+
+	if r.Error != nil {
+		return emailConfirmation, true, r.Error
+	}
+
+	return emailConfirmation, true, nil
 }
 
 func GetUserByGoogleId(id string) (user User, found bool, err error) {
