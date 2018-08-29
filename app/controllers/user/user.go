@@ -7,14 +7,12 @@ import (
 	"strconv"
 	"strings"
 	"theAmazingCodeExample/app/common"
-	"theAmazingCodeExample/app/communications/rabbitMQ"
-	"theAmazingCodeExample/app/communications/rabbitMQ/tasks"
 	"theAmazingCodeExample/app/helpers/amazonS3"
-	"theAmazingCodeExample/app/helpers/sendgrid"
-	"theAmazingCodeExample/app/helpers/twilio"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"time"
+	"theAmazingCodeExample/app/services/theAmazingEmailSender"
+	"theAmazingCodeExample/app/services/theAmazingSmsSender"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -50,7 +48,7 @@ func SendConfirmationEmail(c *gin.Context) {
 	//Send email verification code
 	emailSubject := "Confirmación de email"
 	emailMessage := "Tu código de confirmación es: " + stringCode
-	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+	if sendEmail := theAmazingEmailSender.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 		return
 	}
@@ -182,7 +180,7 @@ func ModifyEmail(c *gin.Context) {
 		//Send email verification code
 		emailSubject := "Confirmación de email"
 		emailMessage := "Tu código de confirmación es: " + stringCode
-		if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+		if sendEmail := theAmazingEmailSender.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 			return
 		}
@@ -250,7 +248,7 @@ func Signup(c *gin.Context) {
 	//Send email verification code
 	emailSubject := "Confirmación de email"
 	emailMessage := "Ingresa al siguiente link para confirmar tu contraseña: http://localhost:5000/confirmEmail?code=" + stringCode + "&email=" + emailValue
-	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
+	if sendEmail := theAmazingEmailSender.SendGenericIndividualEmail(emailSubject, emailMessage, newUser); sendEmail != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 		return
 	}
@@ -289,7 +287,7 @@ func SendRecoveryMail(c *gin.Context) {
 
 	emailSubject := "Recupera tu contraseña"
 	emailMessage := "Tu codigo de recuperación de contraseña es: " + stringCode
-	if sendEmail := sendgrid.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
+	if sendEmail := theAmazingEmailSender.SendGenericIndividualEmail(emailSubject, emailMessage, userData); sendEmail != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": sendEmail.Error()})
 		return
 	}
@@ -706,7 +704,7 @@ func SendVerificationSMS(c *gin.Context) {
 	phoneCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-4:]
 
 	//Create task to send verification code
-	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(userPhoneConfirmation.Phone, phoneCode)); err != nil {
+	if err := theAmazingSmsSender.SendSms(userPhoneConfirmation.Phone,phoneCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
@@ -734,7 +732,7 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Check phone number is valid
-	isValidPhoneNumber, err, phoneData := twilio.ValidatePhoneNumber(phoneNumber)
+	isValidPhoneNumber, err, phoneData := theAmazingSmsSender.ValidatePhoneNumber(phoneNumber)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
@@ -792,7 +790,7 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Send verification code
-	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber, phoneCode)); err != nil {
+	if err := theAmazingSmsSender.SendSms(phoneNumber,phoneCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}

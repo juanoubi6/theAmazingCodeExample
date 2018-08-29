@@ -1,4 +1,4 @@
-package twilio
+package theAmazingSmsSender
 
 import (
 	"encoding/json"
@@ -27,3 +27,14 @@ func ValidatePhoneNumber(number string) (bool, error, tasks.PhoneCheckTaskRespon
 	}
 
 }
+
+func SendSms(phoneNumber string, code string)error{
+
+	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber, code)); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+

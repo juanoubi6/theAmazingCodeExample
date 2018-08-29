@@ -1,4 +1,4 @@
-package sendgrid
+package theAmazingEmailSender
 
 import (
 	"encoding/json"
