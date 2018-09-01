@@ -28,7 +28,7 @@ func ValidatePhoneNumber(number string) (bool, error, tasks.PhoneCheckTaskRespon
 
 }
 
-func SendSms(phoneNumber string, code string)error{
+func SendSms(phoneNumber string, code string) error {
 
 	if err := rabbitMQ.PublishMessageOnQueue(tasks.NewSmsTask(phoneNumber, code)); err != nil {
 		return err
@@ -37,4 +37,3 @@ func SendSms(phoneNumber string, code string)error{
 	return nil
 
 }
-

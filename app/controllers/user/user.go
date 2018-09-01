@@ -10,9 +10,9 @@ import (
 	"theAmazingCodeExample/app/helpers/amazonS3"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
-	"time"
 	"theAmazingCodeExample/app/services/theAmazingEmailSender"
 	"theAmazingCodeExample/app/services/theAmazingSmsSender"
+	"time"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -704,7 +704,7 @@ func SendVerificationSMS(c *gin.Context) {
 	phoneCode := strconv.Itoa(int(recoveryCode))[len(strconv.Itoa(int(recoveryCode)))-4:]
 
 	//Create task to send verification code
-	if err := theAmazingSmsSender.SendSms(userPhoneConfirmation.Phone,phoneCode); err != nil {
+	if err := theAmazingSmsSender.SendSms(userPhoneConfirmation.Phone, phoneCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
@@ -790,7 +790,7 @@ func ModifyPhone(c *gin.Context) {
 	}
 
 	//Send verification code
-	if err := theAmazingSmsSender.SendSms(phoneNumber,phoneCode); err != nil {
+	if err := theAmazingSmsSender.SendSms(phoneNumber, phoneCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}

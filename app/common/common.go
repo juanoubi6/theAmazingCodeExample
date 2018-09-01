@@ -59,7 +59,7 @@ func CreateAWSSession() {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(config.GetConfig().AWS_REGION),
 		Credentials: creds})
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
 	awsSession = sess
