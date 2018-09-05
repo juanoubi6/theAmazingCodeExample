@@ -19,14 +19,14 @@ import (
 	"time"
 )
 
-func DeletePictureFromS3(photoData models.ProfilePicture) error {
+func DeletePictureFromS3(photoData models.ProfilePicture,bucketName string) error {
 
 	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
 
 		svc := s3.New(common.GetAWSSession())
 
 		_, err := svc.DeleteObject(&s3.DeleteObjectInput{
-			Bucket: aws.String(config.GetConfig().AWS_BUCKET),
+			Bucket: aws.String(bucketName),
 			Key:    aws.String(photoData.S3Key),
 		})
 		if err != nil {
@@ -34,7 +34,7 @@ func DeletePictureFromS3(photoData models.ProfilePicture) error {
 		}
 
 		err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
-			Bucket: aws.String(config.GetConfig().AWS_BUCKET),
+			Bucket: aws.String(bucketName),
 			Key:    aws.String(photoData.S3Key),
 		})
 		if err != nil {
@@ -51,13 +51,13 @@ func DeletePictureFromS3(photoData models.ProfilePicture) error {
 	return nil
 }
 
-func UploadImageToS3(header *multipart.FileHeader) (string, string, error) {
+func UploadImageToS3(header *multipart.FileHeader,bucketName string) (string, string, error) {
 
 	if err := checkImageType(header); err != nil {
 		return "", "", err
 	}
 
-	s3Key, url, err := uploadPicture(common.GetAWSSession(), header)
+	s3Key, url, err := uploadPicture(common.GetAWSSession(), header,bucketName)
 	if err != nil {
 		return "", "", err
 	}
@@ -97,7 +97,7 @@ func getContentType(file multipart.File) (string, error) {
 	return http.DetectContentType(buff), nil
 }
 
-func uploadPicture(awsSession *session.Session, header *multipart.FileHeader) (string, string, error) {
+func uploadPicture(awsSession *session.Session, header *multipart.FileHeader,bucketName string) (string, string, error) {
 
 	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
 
@@ -121,7 +121,7 @@ func uploadPicture(awsSession *session.Session, header *multipart.FileHeader) (s
 		uploader := s3manager.NewUploader(awsSession)
 		key := aws.String(getS3FileKey(buf.Bytes()) + "." + ctype[6:])
 		uploaded, err := uploader.Upload(&s3manager.UploadInput{
-			Bucket:      aws.String(config.GetConfig().AWS_BUCKET),
+			Bucket:      aws.String(bucketName),
 			Key:         key,
 			Body:        file,
 			ContentType: aws.String(ctype),

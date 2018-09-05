@@ -9,6 +9,8 @@ import (
 	"github.com/nats-io/go-nats"
 	"github.com/streadway/amqp"
 	"theAmazingCodeExample/app/config"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 )
 
 var db *gorm.DB
@@ -54,15 +56,45 @@ func GetRabbitMQChannel() *amqp.Channel {
 }
 
 func CreateAWSSession() {
+
 	creds := credentials.NewStaticCredentials(config.GetConfig().AWS_ACCESS_KEY_ID, config.GetConfig().AWS_SECRET_ACCESS_KEY, "")
 
-	sess, err := session.NewSession(&aws.Config{Region: aws.String(config.GetConfig().AWS_REGION),
-		Credentials: creds})
+	awsConfig := &aws.Config{
+		Region: aws.String(config.GetConfig().AWS_REGION),
+		Credentials: creds,
+		Endpoint:aws.String(config.GetConfig().AWS_URL),
+		DisableSSL:       aws.Bool(true),
+		S3ForcePathStyle:aws.Bool(true),
+
+	}
+
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		panic(err)
 	}
 
 	awsSession = sess
+
+	s3Client := s3.New(awsSession)
+
+	// Create profile picture bucket
+	cparams := &s3.CreateBucketInput{
+		Bucket: aws.String(config.GetConfig().AWS_BUCKET_PROFILE_PICTURES),
+	}
+	_, err = s3Client.CreateBucket(cparams)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeBucketAlreadyOwnedByYou:
+				println("Bucket already owned")
+			case s3.ErrCodeBucketAlreadyExists:
+				println("Bucket already created")
+			default:
+				panic(err)
+			}
+		}
+	}
+
 }
 
 func GetAWSSession() *session.Session {
