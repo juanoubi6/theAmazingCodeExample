@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-func DeletePictureFromS3(photoData models.ProfilePicture,bucketName string) error {
+func DeletePictureFromS3(photoData models.ProfilePicture, bucketName string) error {
 
 	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
 
@@ -51,13 +51,13 @@ func DeletePictureFromS3(photoData models.ProfilePicture,bucketName string) erro
 	return nil
 }
 
-func UploadImageToS3(header *multipart.FileHeader,bucketName string) (string, string, error) {
+func UploadImageToS3(header *multipart.FileHeader, bucketName string) (string, string, error) {
 
 	if err := checkImageType(header); err != nil {
 		return "", "", err
 	}
 
-	s3Key, url, err := uploadPicture(common.GetAWSSession(), header,bucketName)
+	s3Key, url, err := uploadPicture(common.GetAWSSession(), header, bucketName)
 	if err != nil {
 		return "", "", err
 	}
@@ -97,7 +97,7 @@ func getContentType(file multipart.File) (string, error) {
 	return http.DetectContentType(buff), nil
 }
 
-func uploadPicture(awsSession *session.Session, header *multipart.FileHeader,bucketName string) (string, string, error) {
+func uploadPicture(awsSession *session.Session, header *multipart.FileHeader, bucketName string) (string, string, error) {
 
 	if config.GetConfig().AWS_SECRET_ACCESS_KEY != "" {
 

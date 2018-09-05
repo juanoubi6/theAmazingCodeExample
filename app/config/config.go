@@ -26,11 +26,11 @@ type Config struct {
 	DB_PORT     string
 	DB_NAME     string
 
-	AWS_URL				 string
-	AWS_ACCESS_KEY_ID     string
-	AWS_SECRET_ACCESS_KEY string
-	AWS_BUCKET_PROFILE_PICTURES            string
-	AWS_REGION            string
+	AWS_URL                     string
+	AWS_ACCESS_KEY_ID           string
+	AWS_SECRET_ACCESS_KEY       string
+	AWS_BUCKET_PROFILE_PICTURES string
+	AWS_REGION                  string
 
 	GOOGLE_PLACES_API_KEY string
 	GOOGLE_CLIENT_ID      string
@@ -72,11 +72,11 @@ func newConfig() Config {
 		DB_PORT:     GetEnv("DB_PORT", "3306"),
 		DB_NAME:     GetEnv("DB_NAME", "amazing-code-database"),
 
-		AWS_URL:     GetEnv("AWS_URL", ""),
-		AWS_ACCESS_KEY_ID:     GetEnv("AWS_ACCESS_KEY_ID", ""),
-		AWS_SECRET_ACCESS_KEY: GetEnv("AWS_SECRET_ACCESS_KEY", ""),
-		AWS_BUCKET_PROFILE_PICTURES:            GetEnv("AWS_BUCKET_PROFILE_PICTURES", ""),
-		AWS_REGION:            GetEnv("AWS_REGION", ""),
+		AWS_URL:                     GetEnv("AWS_URL", ""),
+		AWS_ACCESS_KEY_ID:           GetEnv("AWS_ACCESS_KEY_ID", ""),
+		AWS_SECRET_ACCESS_KEY:       GetEnv("AWS_SECRET_ACCESS_KEY", ""),
+		AWS_BUCKET_PROFILE_PICTURES: GetEnv("AWS_BUCKET_PROFILE_PICTURES", ""),
+		AWS_REGION:                  GetEnv("AWS_REGION", ""),
 
 		GOOGLE_PLACES_API_KEY: GetEnv("GOOGLE_PLACES_API_KEY", ""),
 		GOOGLE_CLIENT_ID:      GetEnv("GOOGLE_CLIENT_ID", ""),

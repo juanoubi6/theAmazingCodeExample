@@ -2,15 +2,15 @@ package common
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/nats-io/go-nats"
 	"github.com/streadway/amqp"
 	"theAmazingCodeExample/app/config"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 )
 
 var db *gorm.DB
@@ -60,12 +60,11 @@ func CreateAWSSession() {
 	creds := credentials.NewStaticCredentials(config.GetConfig().AWS_ACCESS_KEY_ID, config.GetConfig().AWS_SECRET_ACCESS_KEY, "")
 
 	awsConfig := &aws.Config{
-		Region: aws.String(config.GetConfig().AWS_REGION),
-		Credentials: creds,
-		Endpoint:aws.String(config.GetConfig().AWS_URL),
+		Region:           aws.String(config.GetConfig().AWS_REGION),
+		Credentials:      creds,
+		Endpoint:         aws.String(config.GetConfig().AWS_URL),
 		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle:aws.Bool(true),
-
+		S3ForcePathStyle: aws.Bool(true),
 	}
 
 	sess, err := session.NewSession(awsConfig)

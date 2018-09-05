@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"strings"
 	"theAmazingCodeExample/app/common"
+	"theAmazingCodeExample/app/config"
 	"theAmazingCodeExample/app/helpers/amazonS3"
 	"theAmazingCodeExample/app/models"
 	"theAmazingCodeExample/app/security"
 	"theAmazingCodeExample/app/services/theAmazingEmailSender"
 	"theAmazingCodeExample/app/services/theAmazingSmsSender"
 	"time"
-	"theAmazingCodeExample/app/config"
 )
 
 func SendConfirmationEmail(c *gin.Context) {
@@ -590,7 +590,7 @@ func AddProfilePicture(c *gin.Context) {
 
 	//Check if user has a profile picture. If so, delete old picture
 	if userData.ProfilePicture.ID != 0 {
-		if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture,config.GetConfig().AWS_BUCKET_PROFILE_PICTURES); err != nil {
+		if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture, config.GetConfig().AWS_BUCKET_PROFILE_PICTURES); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 			return
 		}
@@ -644,7 +644,7 @@ func DeleteProfilePicture(c *gin.Context) {
 		return
 	}
 
-	if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture,config.GetConfig().AWS_BUCKET_PROFILE_PICTURES); err != nil {
+	if err = amazonS3.DeletePictureFromS3(userData.ProfilePicture, config.GetConfig().AWS_BUCKET_PROFILE_PICTURES); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"description": "Something went wrong", "detail": err.Error()})
 		return
 	}
@@ -655,7 +655,7 @@ func DeleteProfilePicture(c *gin.Context) {
 
 func uploadAndSaveProfilePicture(header *multipart.FileHeader, userID uint) error {
 
-	s3key, url, err := amazonS3.UploadImageToS3(header,config.GetConfig().AWS_BUCKET_PROFILE_PICTURES)
+	s3key, url, err := amazonS3.UploadImageToS3(header, config.GetConfig().AWS_BUCKET_PROFILE_PICTURES)
 	if err != nil {
 		return err
 	}
