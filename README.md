@@ -1,4 +1,4 @@
-# Small Microservice application for test purposes
+# Small Microservice application for test purposes. Kind of a Social Network
 
 Tools needed to run this example:
  - RabbitMQ (configure host and port on config.go)
