@@ -4,6 +4,7 @@ Tools needed to run this example:
  - RabbitMQ (configure host and port on config.go)
  - NATS
  - Redis (optional, can be run without it)
+ - Minio server (local s3 mock)
 
 ## Functionality
 
@@ -43,7 +44,7 @@ $ go build && migrationScript.exe
 You can run all services with those 3 commands. The first one creates the vendor folder, the second one gets all dependencies and the third one compiles and executes the service.
 
 ### Considerations to run each service
-- [theAmazingCodeExample](https://github.com/juanoubi6/theAmazingCodeExample) -  You'll need RabbitMQ and NATS server running. Also, you'll need a google places api key and a google project oauth key.
+- [theAmazingCodeExample](https://github.com/juanoubi6/theAmazingCodeExample) -  You'll need RabbitMQ, NATS and Minio server running. Also, you'll need a google places api key and a google project oauth key.
 - [theAmazingSmsSender](https://github.com/juanoubi6/theAmazingSmsSender) - You will need RabbitMQ server running. Also, you'll have to create an account in Twilio to fill the env params.  
 - [theAmazingEmailSender](https://github.com/juanoubi6/theAmazingEmailSender) - You will need NATS server running. Also, you'll have to create an account in Sendgrid and create an API key to fill the env params.  
 - [theAmazingPostManager](https://github.com/juanoubi6/theAmazingPostManager) - You can start Redis server before running the service if you want it to use it, but it's optional
