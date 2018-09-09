@@ -30,21 +30,25 @@ Tools needed to run this example:
 
 ### Posts and comments (theAmazingPostManager)
 - Post CRUD
-- Users can comment and vote posts. Also, users can comment and vote other comments
+- Users can comment and vote posts. Also, users can comment and vote other comments. These actions fires a message to a RabbitMQ exchange. The notification service has queues binded to this exchange and will create the notifications
 - See all existing posts with a certain order (with pagination)
 - Get last created posts and comments (uses Redis if the application could establish connection with the server)
 
+### Notifications (theAmazingNotificator)
+- Show user notifications
+- Creates notifications for new post comments, comments on comment or post votes
+
 ## How to run each service
-First, you will need to create the database and schema. You must use the [migration script](https://github.com/juanoubi6/migrationScript) to set up the initial table structure. You will need [Govendor](https://github.com/kardianos/govendor) for dependencies. Once in the project root:
+First, you will need to create the database and schema. You must use the [migration script](https://github.com/juanoubi6/migrationScript) to set up the initial table structure. You will need [Govendor](https://github.com/kardianos/govendor) for downloading dependencies. Once in the project root:
 ```sh
-$ govendor init
-$ govendor add +external
+$ govendor sync
 $ go build && migrationScript.exe
 ```
-You can run all services with those 3 commands. The first one creates the vendor folder, the second one gets all dependencies and the third one compiles and executes the service.
+You can run all services with those 2 commands. The first command fetches all dependencies and the second one compiles and executes the service.
 
 ### Considerations to run each service
 - [theAmazingCodeExample](https://github.com/juanoubi6/theAmazingCodeExample) -  You'll need RabbitMQ, NATS and Minio server running. Also, you'll need a google places api key and a google project oauth key.
 - [theAmazingSmsSender](https://github.com/juanoubi6/theAmazingSmsSender) - You will need RabbitMQ server running. Also, you'll have to create an account in Twilio to fill the env params.  
 - [theAmazingEmailSender](https://github.com/juanoubi6/theAmazingEmailSender) - You will need NATS server running. Also, you'll have to create an account in Sendgrid and create an API key to fill the env params.  
-- [theAmazingPostManager](https://github.com/juanoubi6/theAmazingPostManager) - You can start Redis server before running the service if you want it to use it, but it's optional
+- [theAmazingPostManager](https://github.com/juanoubi6/theAmazingPostManager) - You'll need RabbitMQ server running.You can start Redis server before running the service if you want it to use it, but it's optional
+- [theAmazingNotificator](https://github.com/juanoubi6/theAmazingNotificator) - You'll need RabbitMQ server running
