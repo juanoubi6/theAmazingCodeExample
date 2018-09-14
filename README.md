@@ -52,3 +52,6 @@ You can run all services with those 2 commands. The first command fetches all de
 - [theAmazingEmailSender](https://github.com/juanoubi6/theAmazingEmailSender) - You will need NATS server running. Also, you'll have to create an account in Sendgrid and create an API key to fill the env params.  
 - [theAmazingPostManager](https://github.com/juanoubi6/theAmazingPostManager) - You'll need RabbitMQ server running.You can start Redis server before running the service if you want it to use it, but it's optional
 - [theAmazingNotificator](https://github.com/juanoubi6/theAmazingNotificator) - You'll need RabbitMQ server running
+
+### Running minio server
+Follow https://docs.minio.io/ on how to start your server. Assign the ACCESSKEY and SECRETKEY to your .env file
