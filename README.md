@@ -1,6 +1,6 @@
 # Small Microservice application for learning purposes. Kind of a Social Network
 
-![](TheAmazingCodeExample Diagram.jpeg?raw=true)
+![](images/TheAmazingCodeExample Diagram.jpeg?raw=true)
 
 Tools needed to run this example:
  - RabbitMQ (configure host and port on config.go)
